@@ -1,0 +1,199 @@
+
+
+3. Shot Clock / Passive Play Indicator
+
+Handball doesn’t have a strict shot clock, but referees signal passive play.
+
+You can add:
+
+    A “Passive Play” toggle
+
+    A 6‑pass counter (referees count passes after passive warning)
+
+    A visual indicator on the display
+
+This is extremely useful for commentators and streams.
+4. Player Numbers for Goals
+
+Optional but very nice:
+
+    When a goal is scored, allow entering the scorer’s number
+
+    Store a match log
+
+    Display “Goal #23” briefly on the scoreboard
+
+    Export match stats later
+
+5. Match Log / Event Timeline
+
+Handball is event‑rich. A timeline could include:
+
+    Goals
+
+    Suspensions
+
+    Timeouts
+
+    Period changes
+
+    Technical timeouts
+
+    End of half
+
+This can be a simple list in the control panel.
+6. Technical Timeout Button
+
+For injuries, floor cleaning, or referee decisions.
+
+    Stops the clock
+
+    Marks the event in the log
+
+    Optional countdown (e.g., 1 minute)
+
+7. Automatic Period Transition Logic
+
+You already have basic period switching, but handball has:
+
+    1st half (30 min)
+
+    10‑minute break
+
+    2nd half (30 min)
+
+    5‑minute break
+
+    Overtime 1 (5 min)
+
+    1‑minute break
+
+    Overtime 2 (5 min)
+
+    7‑meter shootout
+
+You can automate:
+
+Auto‑start break timer Auto‑switch to next period Auto‑prepare shootout mode
+8. 7‑Meter Shootout Mode
+
+A dedicated mode for penalty shootouts:
+
+    Track each team’s attempts
+
+    Mark goals/misses
+
+    Display shootout score separately
+
+    Sudden‑death logic
+
+This is a huge upgrade for tournament play.
+9. Team Logos
+
+You already added color pickers — logos are the next step.
+
+    Upload PNG/SVG
+
+    Display next to team names
+
+    Auto‑resize
+
+    Optional chroma‑safe background
+
+10. Referee / Table Official Mode (Mobile‑Friendly)
+
+A simplified UI for:
+
+    Start/stop timer
+
+    Add goals
+
+    Add suspensions
+
+    Call timeout
+
+This is extremely useful if someone is operating the scoreboard from a phone or tablet.
+11. Horn / Buzzer Button
+
+Handball uses a table buzzer to signal:
+
+    Substitution errors
+
+    Timeouts
+
+    End of period
+
+You can add:
+
+    A “Buzzer” button
+
+    Play a sound on the display device
+
+12. Match Configuration Screen
+
+Before the match:
+
+    Team names
+
+    Team colors
+
+    Match type (league, cup, friendly)
+
+    Match duration (youth games use 2×25 or 2×20)
+
+    Overtime enabled or disabled
+
+13. Automatic Clock Rules
+
+Handball has strict timing rules:
+
+    Clock stops on referee whistle
+
+    Clock stops for suspensions
+
+    Clock stops for timeouts
+
+    Clock stops for injuries
+
+You can add:
+
+A “Referee Whistle” button Auto‑stop timer on certain events
+14. Goal Animation on Display
+
+A subtle animation when a team scores:
+
+    Flash team block
+
+    Pulse score
+
+    Show “GOAL!” briefly
+
+This adds a lot of production value.
+15. Export Match Report
+
+After the match:
+
+    Goals per player
+
+    Suspensions
+
+    Timeouts
+
+    Final score
+
+    Timeline
+
+Export as:
+
+    PDF
+
+    CSV
+
+    JSON
+
+(You can choose the format later.)
+If you want, I can help you implement any of these next
+
+Just tell me which direction you want to go:
+
+🎯 Suspensions 🎯 Timeouts 🎯 Shootout mode 🎯 Goal animations 🎯 Match log 

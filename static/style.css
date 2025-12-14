@@ -1,0 +1,213 @@
+/* GENERAL LAYOUT -------------------------------------------------- */
+
+.control-body {
+    background: #0f1116;
+    color: #e6e6e6;
+    font-family: "Inter", "Roboto", sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 25px;
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+.control-container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+/* SECTIONS -------------------------------------------------------- */
+
+.control-section {
+    background: #1a1d24;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    border: 1px solid #2a2f3a;
+}
+
+.control-section h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    color: #ffffff;
+    border-bottom: 1px solid #2a2f3a;
+    padding-bottom: 8px;
+}
+
+/* INPUTS ---------------------------------------------------------- */
+
+label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+input[type="text"] {
+    background: #0f1116;
+    border: 1px solid #2a2f3a;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: white;
+    width: 60%;
+}
+
+input[type="color"] {
+    width: 40px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* BUTTONS --------------------------------------------------------- */
+
+button {
+    background: #2d7dff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+button:hover {
+    background: #1b5fcc;
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+.save-button {
+    display: block;
+    margin: 30px auto 0;
+    padding: 12px 22px;
+    font-size: 1.1rem;
+    background: #00b36b;
+}
+
+.save-button:hover {
+    background: #00995c;
+}
+
+.del-button{
+    content : "✕";
+    margin-left : 10px;
+    background-color: orange;
+    color: #0f1116;
+}
+
+.del-button:hover{
+    background-color: rgb(255, 115, 0);
+}
+.reset-button, .reset-button:hover{
+    background-color: red;
+}
+
+/* SCORE ROWS ------------------------------------------------------ */
+
+.score-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.score-row span {
+    font-size: 1.1rem;
+}
+
+.score-row button {
+    width: 40px;
+    height: 32px;
+    font-size: 1.2rem;
+}
+
+#home_score,
+#away_score {
+    font-size: 1.6rem;
+    font-weight: 700;
+    width: 50px;
+    text-align: center;
+}
+
+/* PERIOD LIST ----------------------------------------------------- */
+
+.period-list {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.period-item {
+    padding: 8px 14px;
+    background: #2a2f3a;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s;
+    font-weight: 600;
+}
+
+.period-item:hover {
+    background: #3a4150;
+}
+
+.period-item.active {
+    background: #2d7dff;
+    color: white;
+    box-shadow: 0 0 10px rgba(45,125,255,0.6);
+}
+
+/* TIMER ----------------------------------------------------------- */
+
+.timer-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+input#time {
+    width: 120px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+/* SHORTCUT TABLE -------------------------------------------------- */
+
+table {
+    margin-top: 15px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+td {
+    padding: 4px 0;
+    color: #b0b0b0;
+}
+
+/* TIMEOUT */
+.timeout-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.timeout-status {
+    font-size: 0.9em;
+    color: #444;
+}

@@ -1,0 +1,5 @@
+Flask
+redis
+flask-socketio
+eventlet
+redis

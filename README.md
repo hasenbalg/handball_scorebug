@@ -2,6 +2,8 @@
 
 A handball scoreburgbug that can be used with croma keying for a handball live video stream.
 
+![Frontend](<Screenshot 2025-12-14 at 22-38-57 Handball Scoreboard Display.png>)
+![Backend](<Screenshot 2025-12-14 at 22-39-44 Handball Scoreboard Control.png>)
 ---
 
 ## Requirements

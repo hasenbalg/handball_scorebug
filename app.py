@@ -16,7 +16,6 @@ def broadcast_state(state=None):
         state = ScoreboardState.load()
 
     public = state.to_public_dict()
-
     socketio.emit("state_update", public)
 
 
@@ -83,13 +82,13 @@ def handle_update(data):
     if "delete_suspension_home" in data:
         try:
             state.delete_suspension_home(int(data["delete_suspension_home"]))
-        except:
+        except Exception:
             pass
 
     if "delete_suspension_away" in data:
         try:
             state.delete_suspension_away(int(data["delete_suspension_away"]))
-        except:
+        except Exception:
             pass
 
     # Timeouts
@@ -101,7 +100,7 @@ def handle_update(data):
     # Reset
     if data.get("reset"):
         state.reset()
-    
+
     # Hide eg in pause
     if "hide_scorebug" in data:
         state.hide_scorebug = bool(data["hide_scorebug"])
@@ -136,7 +135,7 @@ def handle_update(data):
 
 
 def timer_thread():
-    print("Timer thread started")
+    log.info("Timer thread started")
     while True:
         try:
             state = ScoreboardState.load()
@@ -146,12 +145,12 @@ def timer_thread():
             state.save()
             broadcast_state(state)
         except Exception as e:
-            print("Timer thread error:", e)
+            log.error("Timer thread error: %s", e)
 
         socketio.sleep(1)
 
 
 if __name__ == "__main__":
-    print("Starting timer thread…")
+    log.info("Starting timer thread…")
     socketio.start_background_task(timer_thread)
     socketio.run(app, debug=True, use_reloader=False)

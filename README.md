@@ -19,8 +19,8 @@ A handball scoreburgbug that can be used with croma keying for a handball live v
 Create and activate a virtual environment:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate   # Linux / macOS
+python3 -m venv env
+source env/bin/activate   # Linux / macOS
 
 # On Windows:
 # venv\Scripts\activate
@@ -29,6 +29,7 @@ source venv/bin/activate   # Linux / macOS
 Install dependencies:
 
 ```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
@@ -36,13 +37,22 @@ pip install -r requirements.txt
 
 ## Installing Redis
 
-### Linux (Debian/Ubuntu)
+### Linux 
 
+#### (Debian/Ubuntu)
 ```bash
 sudo apt update
 sudo apt install redis-server
 sudo systemctl enable redis-server
 sudo systemctl start redis-server
+```
+
+#### (Redhat/Fedora)
+```bash
+sudo dnf update
+sudo dnf install redis
+sudo systemctl enable redis
+sudo systemctl start redis
 ```
 
 ### macOS (Homebrew)

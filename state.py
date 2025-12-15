@@ -24,8 +24,7 @@ class ScoreboardState:
     away_score: int = 0
 
     period_index: int = 0
-    remaining_seconds: int = PERIODS[0][1]
-
+    elapsed_seconds: int = 0  # counts UP within the current period
     running: bool = False
     start_time: float | None = None
 
@@ -48,7 +47,6 @@ class ScoreboardState:
     home_shootout: list | None = None
     away_shootout: list | None = None
 
-
     def __post_init__(self):
         if self.home_suspensions is None:
             self.home_suspensions = []
@@ -58,7 +56,6 @@ class ScoreboardState:
             self.home_shootout = []
         if self.away_shootout is None:
             self.away_shootout = []
-
 
     # ----- Persistence -----
 
@@ -70,11 +67,15 @@ class ScoreboardState:
 
         data = json.loads(raw)
 
-        # Backward compatibility
+        # Backward compatibility for prior keys
         data.setdefault("home_suspensions", [])
         data.setdefault("away_suspensions", [])
         data.setdefault("home_color", "#005eff")
         data.setdefault("away_color", "#ff3b3b")
+
+        # Migrate old countdown field to elapsed
+        if "remaining_seconds" in data and "elapsed_seconds" not in data:
+            data["elapsed_seconds"] = data.pop("remaining_seconds")
 
         return cls(**data)
 
@@ -95,16 +96,19 @@ class ScoreboardState:
             elapsed = now - self.start_time
 
             if elapsed >= 1:
-                self.remaining_seconds = max(0, self.remaining_seconds - int(elapsed))
+                self.elapsed_seconds += int(elapsed)  # count up
                 self.start_time = now
 
-                if self.remaining_seconds == 0:
+                # Optional cap at period duration (stop automatically)
+                period_cap = PERIODS[self.period_index][1]
+                if self.elapsed_seconds >= period_cap:
+                    self.elapsed_seconds = period_cap
                     self.running = False
                     self.start_time = None
 
     def compute_time(self):
         self.update_time()
-        return self.format_time(self.remaining_seconds)
+        return self.format_time(self.elapsed_seconds)
 
     @staticmethod
     def format_time(seconds: int) -> str:
@@ -115,7 +119,7 @@ class ScoreboardState:
     def set_time(self, timestr: str):
         try:
             m, s = timestr.split(":")
-            self.remaining_seconds = int(m) * 60 + int(s)
+            self.elapsed_seconds = int(m) * 60 + int(s)
         except Exception:
             return
         self.running = False
@@ -136,13 +140,13 @@ class ScoreboardState:
     def next_period(self):
         self.stop_timer()
         self.period_index = min(len(PERIODS) - 1, self.period_index + 1)
-        self.remaining_seconds = PERIODS[self.period_index][1]
+        self.elapsed_seconds = 0
 
     def set_period_index(self, index: int):
         index = max(0, min(len(PERIODS) - 1, index))
         self.stop_timer()
         self.period_index = index
-        self.remaining_seconds = PERIODS[self.period_index][1]
+        self.elapsed_seconds = 0
 
     # ----- Suspensions -----
 
@@ -211,14 +215,13 @@ class ScoreboardState:
         self.home_score = 0
         self.away_score = 0
         self.period_index = 0
-        self.remaining_seconds = PERIODS[0][1]
+        self.elapsed_seconds = 0
         self.running = False
         self.start_time = None
         self.home_suspensions = []
         self.away_suspensions = []
         self.home_timeout_end = None
         self.away_timeout_end = None
-
 
     # ----- 7M Shootout -----
 
@@ -241,7 +244,6 @@ class ScoreboardState:
             self.home_shootout.pop()
         if not is_home and self.away_shootout:
             self.away_shootout.pop()
-
 
     # ----- Public dict -----
 
@@ -274,10 +276,8 @@ class ScoreboardState:
             # Timeouts
             "home_timeout_active": self.home_timeout_end is not None,
             "away_timeout_active": self.away_timeout_end is not None,
-            "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time()))
-                if self.home_timeout_end else 0,
-            "away_timeout_remaining": max(0, int(self.away_timeout_end - time.time()))
-                if self.away_timeout_end else 0,
+            "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time())) if self.home_timeout_end else 0,
+            "away_timeout_remaining": max(0, int(self.away_timeout_end - time.time())) if self.away_timeout_end else 0,
             "hide_scorebug": self.hide_scorebug,
             "shootout_active": self.shootout_active,
             "home_shootout": self.home_shootout,

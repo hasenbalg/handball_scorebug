@@ -73,11 +73,26 @@ def handle_update(data):
 
     # Suspensions
     if "add_suspension_home" in data:
-        player = str(data["add_suspension_home"]).strip() or "??"
-        state.add_suspension_home(player)
+        susp = data["add_suspension_home"]
+        if isinstance(susp, dict):
+            state.add_suspension_home(
+                susp.get("player", "??"),
+                susp.get("card")  # may be None
+            )
+        else:
+            player = str(susp).strip() or "??"
+            state.add_suspension_home(player, None)
+
     if "add_suspension_away" in data:
-        player = str(data["add_suspension_away"]).strip() or "??"
-        state.add_suspension_away(player)
+        susp = data["add_suspension_away"]
+        if isinstance(susp, dict):
+            state.add_suspension_away(
+                susp.get("player", "??"),
+                susp.get("card")
+            )
+        else:
+            player = str(susp).strip() or "??"
+            state.add_suspension_away(player, None)
 
     if "delete_suspension_home" in data:
         try:

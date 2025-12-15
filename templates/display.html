@@ -91,7 +91,7 @@
             homeBlock.style.background = makeGradient(state.home_color);
             awayBlock.style.background = makeGradient(state.away_color);
 
-            // Suspensions
+            // Suspensions with card info
             const hp = document.getElementById("home_penalties");
             const ap = document.getElementById("away_penalties");
             hp.innerHTML = "";
@@ -100,14 +100,21 @@
             (state.home_suspensions || []).forEach(s => {
                 const div = document.createElement("div");
                 div.className = "penalty-badge";
-                div.textContent = `#${s.player} ${formatTime(s.remaining)}`;
+                if (s.card) div.classList.add(s.card.toLowerCase()); // add CSS class for card color
+
+                let text = `#${s.player} ${formatTime(s.remaining)}`;
+
+                div.textContent = text;
                 hp.appendChild(div);
             });
 
             (state.away_suspensions || []).forEach(s => {
                 const div = document.createElement("div");
                 div.className = "penalty-badge";
-                div.textContent = `#${s.player} ${formatTime(s.remaining)}`;
+                if (s.card) div.classList.add(s.card.toLowerCase());
+
+                let text = `#${s.player} ${formatTime(s.remaining)}`;
+                div.textContent = text;
                 ap.appendChild(div);
             });
 
@@ -129,7 +136,7 @@
                 awayTO.style.display = "none";
             }
 
-            // SHOOTOUT (split lanes)
+            // SHOOTOUT
             const homeLane = document.getElementById("shootout_home");
             const awayLane = document.getElementById("shootout_away");
 
@@ -159,5 +166,4 @@
     </script>
 
 </body>
-
 </html>

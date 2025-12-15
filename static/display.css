@@ -110,7 +110,20 @@
     border-radius: 6px;
     font-size: 0.8rem;
     font-weight: 600;
+    display: inline-block;
+    border: 1px solid white;
 }
+
+.penalty-badge.yellow {
+    background: #ffd633;
+    color: #000;
+}
+
+.penalty-badge.red {
+    background: #ff3333;
+    color: #fff;
+}
+
 
 /* Timeout indicator */
 .timeout-indicator {

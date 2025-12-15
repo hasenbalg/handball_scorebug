@@ -211,3 +211,12 @@ td {
     font-size: 0.9em;
     color: #444;
 }
+
+.suspension-row{
+    margin-top: 1rem;
+}
+
+.suspension-row input{
+    width: 5rem;
+    margin: 8px;
+}

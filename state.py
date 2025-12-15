@@ -2,6 +2,7 @@ import json
 import time
 import redis
 from dataclasses import dataclass, asdict
+from suspension import Suspension
 
 # Redis connection
 r = redis.Redis(host="localhost", port=6379, db=0)
@@ -24,7 +25,7 @@ class ScoreboardState:
     away_score: int = 0
 
     period_index: int = 0
-    elapsed_seconds: int = 0  # counts UP within the current period
+    elapsed_seconds: int = 0  # counts UP
     running: bool = False
     start_time: float | None = None
 
@@ -58,7 +59,6 @@ class ScoreboardState:
             self.away_shootout = []
 
     # ----- Persistence -----
-
     @classmethod
     def load(cls) -> "ScoreboardState":
         raw = r.get(REDIS_KEY)
@@ -67,15 +67,32 @@ class ScoreboardState:
 
         data = json.loads(raw)
 
-        # Backward compatibility for prior keys
+        # Backward compatibility defaults
         data.setdefault("home_suspensions", [])
         data.setdefault("away_suspensions", [])
         data.setdefault("home_color", "#005eff")
         data.setdefault("away_color", "#ff3b3b")
 
-        # Migrate old countdown field to elapsed
         if "remaining_seconds" in data and "elapsed_seconds" not in data:
             data["elapsed_seconds"] = data.pop("remaining_seconds")
+
+        # Rehydrate suspensions
+        def make_susp_list(lst):
+            out = []
+            for s in lst:
+                if isinstance(s, dict):
+                    out.append(Suspension(
+                        player=s.get("player"),
+                        start_time=s.get("start_time"),
+                        duration=s.get("duration"),
+                        card=s.get("card")
+                    ))
+                else:
+                    out.append(s)
+            return out
+
+        data["home_suspensions"] = make_susp_list(data["home_suspensions"])
+        data["away_suspensions"] = make_susp_list(data["away_suspensions"])
 
         return cls(**data)
 
@@ -96,10 +113,9 @@ class ScoreboardState:
             elapsed = now - self.start_time
 
             if elapsed >= 1:
-                self.elapsed_seconds += int(elapsed)  # count up
+                self.elapsed_seconds += int(elapsed)
                 self.start_time = now
 
-                # Optional cap at period duration (stop automatically)
                 period_cap = PERIODS[self.period_index][1]
                 if self.elapsed_seconds >= period_cap:
                     self.elapsed_seconds = period_cap
@@ -150,31 +166,25 @@ class ScoreboardState:
 
     # ----- Suspensions -----
 
-    def suspension_remaining(self, susp: dict) -> int:
-        elapsed = int(time.time() - susp["start_time"])
-        return max(0, susp["duration"] - elapsed)
-
     def cleanup_suspensions(self):
-        self.home_suspensions = [
-            s for s in self.home_suspensions if self.suspension_remaining(s) > 0
-        ]
-        self.away_suspensions = [
-            s for s in self.away_suspensions if self.suspension_remaining(s) > 0
-        ]
+        def still_active(s):
+            if hasattr(s, "remaining"):
+                return s.remaining() > 0
+            elif isinstance(s, dict):
+                # compute remaining manually
+                start = s.get("start_time", 0)
+                duration = s.get("duration", 0)
+                return (start + duration) > time.time()
+            return False
 
-    def add_suspension_home(self, player: str, duration: int = 120):
-        self.home_suspensions.append({
-            "player": player,
-            "start_time": time.time(),
-            "duration": duration,
-        })
+        self.home_suspensions = [s for s in self.home_suspensions if still_active(s)]
+        self.away_suspensions = [s for s in self.away_suspensions if still_active(s)]
 
-    def add_suspension_away(self, player: str, duration: int = 120):
-        self.away_suspensions.append({
-            "player": player,
-            "start_time": time.time(),
-            "duration": duration,
-        })
+    def add_suspension_home(self, player: str, card: str = "yellow", duration: int = 120):
+        self.home_suspensions.append(Suspension(player, time.time(), duration, card))
+
+    def add_suspension_away(self, player: str, card: str = "yellow", duration: int = 120):
+        self.away_suspensions.append(Suspension(player, time.time(), duration, card))
 
     def delete_suspension_home(self, index: int):
         if 0 <= index < len(self.home_suspensions):
@@ -186,12 +196,6 @@ class ScoreboardState:
 
     # ----- Timeouts -----
 
-    def in_first_half(self):
-        return self.period_index == 0
-
-    def in_second_half(self):
-        return self.period_index == 1
-
     def start_timeout_home(self):
         self.home_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.stop_timer()
@@ -202,10 +206,8 @@ class ScoreboardState:
 
     def update_timeouts(self):
         now = time.time()
-
         if self.home_timeout_end and now >= self.home_timeout_end:
             self.home_timeout_end = None
-
         if self.away_timeout_end and now >= self.away_timeout_end:
             self.away_timeout_end = None
 
@@ -223,7 +225,7 @@ class ScoreboardState:
         self.home_timeout_end = None
         self.away_timeout_end = None
 
-    # ----- 7M Shootout -----
+    # ----- Shootout -----
 
     def start_shootout(self):
         self.shootout_active = True
@@ -263,17 +265,8 @@ class ScoreboardState:
             "running": self.running,
             "home_color": self.home_color,
             "away_color": self.away_color,
-
-            "home_suspensions": [
-                {"player": s["player"], "remaining": self.suspension_remaining(s)}
-                for s in self.home_suspensions
-            ],
-            "away_suspensions": [
-                {"player": s["player"], "remaining": self.suspension_remaining(s)}
-                for s in self.away_suspensions
-            ],
-
-            # Timeouts
+            "home_suspensions": [s.to_dict() for s in self.home_suspensions],
+            "away_suspensions": [s.to_dict() for s in self.away_suspensions],
             "home_timeout_active": self.home_timeout_end is not None,
             "away_timeout_active": self.away_timeout_end is not None,
             "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time())) if self.home_timeout_end else 0,

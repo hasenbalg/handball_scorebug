@@ -85,8 +85,9 @@
             <h2>Timer</h2>
             <label>
                 Time (MM:SS):
-                <input id="time" type="text" value="{{ game_state.time }}" disabled>
+                <input id="time" type="text" value="{{ game_state.time }}">
             </label>
+            <p id="current-time"></p>
             <span id="running-indicator"></span>
             <div class="timer-buttons">
                 <button onclick="sendUpdate({start_timer: true})">Start (Space)</button>

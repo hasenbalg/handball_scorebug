@@ -19,7 +19,7 @@ socket.on("state_update", (state) => {
         document.getElementById("running-indicator").innerText = '⏸ Paused';
     }
 
-    document.getElementById("time").value = state.time;
+    document.getElementById("current-time").innerText = state.time;
     document.getElementById("time").dataset.running = state.running;
 
     // Highlight current period

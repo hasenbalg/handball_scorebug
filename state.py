@@ -12,8 +12,7 @@ REDIS_KEY = "scoreboard_state"
 PERIODS = [
     ("1st Half", 30 * 60),
     ("2nd Half", 30 * 60),
-    ("Overtime 1", 5 * 60),
-    ("Overtime 2", 5 * 60),
+    ("60 Min", 60 * 60),
 ]
 
 

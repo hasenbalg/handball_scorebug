@@ -165,6 +165,7 @@ function selectPeriod(index) {
 function applyTimeChange() {
     const value = document.getElementById("time").value;
     sendUpdate({ set_time: value });
+    document.getElementById("time").value = '';
 }
 
 function addSuspension(team, card) {

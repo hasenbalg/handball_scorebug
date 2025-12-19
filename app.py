@@ -31,6 +31,12 @@ def display():
     return render_template("display.html", game_state=state.to_public_dict())
 
 
+@app.route("/cube")
+def cube():
+    state = ScoreboardState.load()
+    return render_template("cube.html", game_state=state.to_public_dict())
+
+
 @socketio.on("update")
 def handle_update(data):
     state = ScoreboardState.load()

@@ -17,9 +17,7 @@
         <div class="team-block home">
             <div class="team-info">
                 <div class="team-name" id="home_team">{{ game_state.home_team }}</div>
-
-                <div class="penalties home-penalties" id="home_penalties"></div>
-
+                <div class="cards home-cards penalties home-penalties" id="home_badges"></div>
                 <div class="timeout-indicator" id="home_timeout"></div>
 
                 <!-- HOME SHOOTOUT -->
@@ -40,8 +38,7 @@
             <div class="team-info">
                 <div class="team-name" id="away_team">{{ game_state.away_team }}</div>
 
-                <div class="penalties away-penalties" id="away_penalties"></div>
-
+                <div class="penalties away-penalties" id="away_badges"></div>
                 <div class="timeout-indicator" id="away_timeout"></div>
 
                 <!-- AWAY SHOOTOUT -->
@@ -52,118 +49,8 @@
         </div>
 
     </div>
-
-    <script>
-        const socket = io();
-
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60);
-            const s = sec % 60;
-            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        }
-
-        socket.on("state_update", (state) => {
-
-            // Hide / Show Scorebug
-            const scorebug = document.getElementById("scorebug");
-            if (state.hide_scorebug) {
-                scorebug.classList.add("hidden");
-            } else {
-                scorebug.classList.remove("hidden");
-            }
-
-            // Basic fields
-            document.getElementById("home_team").textContent = state.home_team;
-            document.getElementById("away_team").textContent = state.away_team;
-            document.getElementById("home_score").textContent = state.home_score;
-            document.getElementById("away_score").textContent = state.away_score;
-            document.getElementById("period").textContent = state.period_name;
-            document.getElementById("time").textContent = state.time;
-
-            // Team colors
-            const homeBlock = document.querySelector(".team-block.home");
-            const awayBlock = document.querySelector(".team-block.away");
-
-            function makeGradient(color) {
-                return `linear-gradient(135deg, ${color}, ${color}CC)`;
-            }
-
-            homeBlock.style.background = makeGradient(state.home_color);
-            awayBlock.style.background = makeGradient(state.away_color);
-
-            // Suspensions with card info
-            const hp = document.getElementById("home_penalties");
-            const ap = document.getElementById("away_penalties");
-            hp.innerHTML = "";
-            ap.innerHTML = "";
-
-            (state.home_suspensions || []).forEach(s => {
-                const div = document.createElement("div");
-                div.className = "penalty-badge";
-                if (s.card) div.classList.add(s.card.toLowerCase()); // add CSS class for card color
-
-                let text = `#${s.player} ${formatTime(s.remaining)}`;
-
-                div.textContent = text;
-                hp.appendChild(div);
-            });
-
-            (state.away_suspensions || []).forEach(s => {
-                const div = document.createElement("div");
-                div.className = "penalty-badge";
-                if (s.card) div.classList.add(s.card.toLowerCase());
-
-                let text = `#${s.player} ${formatTime(s.remaining)}`;
-                div.textContent = text;
-                ap.appendChild(div);
-            });
-
-            // TIMEOUTS
-            const homeTO = document.getElementById("home_timeout");
-            const awayTO = document.getElementById("away_timeout");
-
-            if (state.home_timeout_active) {
-                homeTO.textContent = `TIMEOUT ${formatTime(state.home_timeout_remaining)}`;
-                homeTO.style.display = "block";
-            } else {
-                homeTO.style.display = "none";
-            }
-
-            if (state.away_timeout_active) {
-                awayTO.textContent = `TIMEOUT ${formatTime(state.away_timeout_remaining)}`;
-                awayTO.style.display = "block";
-            } else {
-                awayTO.style.display = "none";
-            }
-
-            // SHOOTOUT
-            const homeLane = document.getElementById("shootout_home");
-            const awayLane = document.getElementById("shootout_away");
-
-            if (state.shootout_active) {
-                homeLane.style.display = "flex";
-                awayLane.style.display = "flex";
-
-                homeLane.innerHTML = "";
-                state.home_shootout.forEach(result => {
-                    const dot = document.createElement("div");
-                    dot.className = result ? "so-goal" : "so-miss";
-                    homeLane.appendChild(dot);
-                });
-
-                awayLane.innerHTML = "";
-                state.away_shootout.forEach(result => {
-                    const dot = document.createElement("div");
-                    dot.className = result ? "so-goal" : "so-miss";
-                    awayLane.appendChild(dot);
-                });
-
-            } else {
-                homeLane.style.display = "none";
-                awayLane.style.display = "none";
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='display.js') }}"></script>
 
 </body>
+
 </html>

@@ -40,17 +40,15 @@ socket.on("state_update", (state) => {
     // HOME suspensions
     (state.home_suspensions || []).forEach((s, index) => {
         const li = document.createElement("li");
-        let text = `#${s.player}`;
-        if (s.card) text += ` – ${s.card.toUpperCase()}`;
-        text += ` – ${formatTime(s.remaining)}`;
+        let text = `#${s.player} – ${formatTime(s.remaining)}`;
         li.textContent = text;
-    
+
         const btn = document.createElement("button");
         btn.textContent = "Undo";
         btn.onclick = () => {
             sendUpdate({ delete_suspension_home: index });
         };
-    
+
         li.appendChild(btn);
         homeList.appendChild(li);
     });
@@ -58,19 +56,62 @@ socket.on("state_update", (state) => {
     // AWAY suspensions
     (state.away_suspensions || []).forEach((s, index) => {
         const li = document.createElement("li");
-        let text = `#${s.player}`;
-        if (s.card) text += ` – ${s.card.toUpperCase()}`;
-        text += ` – ${formatTime(s.remaining)}`;
+        let text = `#${s.player} – ${formatTime(s.remaining)}`;
         li.textContent = text;
-    
+
         const btn = document.createElement("button");
         btn.textContent = "Undo";
         btn.onclick = () => {
             sendUpdate({ delete_suspension_away: index });
         };
-    
+
         li.appendChild(btn);
         awayList.appendChild(li);
+    });
+
+    // Cards
+    const homeCardsList = document.getElementById("cards_list_home");
+    const awayCardsList = document.getElementById("cards_list_away");
+    homeCardsList.innerHTML = "";
+    awayCardsList.innerHTML = "";
+
+    // HOME cards
+    (state.home_cards || []).forEach((s, index) => {
+        const li = document.createElement("li");
+                console.log(s);
+
+        // let text = `#${s.player}– ${s.color.toUpperCase()} – ${formatTime(s.remaining)}`;
+        let text = `#${s.player} – ${s.color} – ${formatTime(s.remaining)}`;
+        li.textContent = text;
+
+        const btn = document.createElement("button");
+        btn.textContent = "Undo";
+        btn.onclick = () => {
+            sendUpdate({ delete_card_home: index });
+        };
+
+        li.appendChild(btn);
+        homeCardsList.appendChild(li);
+    });
+
+
+    // AWAY cards
+    (state.away_cards || []).forEach((s, index) => {
+        const li = document.createElement("li");
+        console.log(s);
+        
+        // let text = `#${s.player} – ${s.color.toUpperCase()} – ${formatTime(s.remaining)}`;
+        let text = `#${s.player} – ${s.color} – ${formatTime(s.remaining)}`;
+        li.textContent = text;
+
+        const btn = document.createElement("button");
+        btn.textContent = "Undo";
+        btn.onclick = () => {
+            sendUpdate({ delete_card_away: index });
+        };
+
+        li.appendChild(btn);
+        awayCardsList.appendChild(li);
     });
 
     // Timeout status
@@ -168,14 +209,25 @@ function applyTimeChange() {
     document.getElementById("time").value = '';
 }
 
-function addSuspension(team, card) {
+function addSuspension(team) {
     const id = team + "_susp_player";
     const player = document.getElementById(id).value;
     if (player) {
         // send object with optional card
         const payload = { player };
-        if (card) payload.card = card;
         sendUpdate({ ["add_suspension_" + team]: payload });
+        document.getElementById(id).value = "";
+    }
+}
+
+function addCard(team, card) {
+    const id = team + "_card_player";
+    const player = document.getElementById(id).value;
+    if (player) {
+        // send object with optional card
+        const payload = { player };
+        if (card) payload.card = card;
+        sendUpdate({ ["add_card_" + team]: payload });
         document.getElementById(id).value = "";
     }
 }

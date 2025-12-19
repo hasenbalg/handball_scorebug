@@ -3,6 +3,7 @@ import time
 import redis
 from dataclasses import dataclass, asdict
 from suspension import Suspension
+from card import Card
 
 # Redis connection
 r = redis.Redis(host="localhost", port=6379, db=0)
@@ -36,6 +37,10 @@ class ScoreboardState:
     home_suspensions: list | None = None
     away_suspensions: list | None = None
 
+    # Cards
+    home_cards: list | None = None
+    away_cards: list | None = None
+
     # Timeouts
     home_timeout_end: float | None = None
     away_timeout_end: float | None = None
@@ -52,6 +57,10 @@ class ScoreboardState:
             self.home_suspensions = []
         if self.away_suspensions is None:
             self.away_suspensions = []
+        if self.home_cards is None:
+            self.home_cards = []
+        if self.away_cards is None:
+            self.away_cards = []
         if self.home_shootout is None:
             self.home_shootout = []
         if self.away_shootout is None:
@@ -69,6 +78,8 @@ class ScoreboardState:
         # Backward compatibility defaults
         data.setdefault("home_suspensions", [])
         data.setdefault("away_suspensions", [])
+        data.setdefault("home_cards", [])
+        data.setdefault("away_cards", [])
         data.setdefault("home_color", "#005eff")
         data.setdefault("away_color", "#ff3b3b")
 
@@ -92,6 +103,25 @@ class ScoreboardState:
 
         data["home_suspensions"] = make_susp_list(data["home_suspensions"])
         data["away_suspensions"] = make_susp_list(data["away_suspensions"])
+
+        # Rehydrate cards
+        def make_cards_list(lst):
+            out = []
+            for c in lst:
+                if isinstance(c, dict):
+                    print(c)
+                    out.append(Card(
+                        player=c.get("player"),
+                        start_time=c.get("start_time"),
+                        duration=c.get("duration"),
+                        color=c.get("color")
+                    ))
+                else:
+                    out.append(c)
+            return out
+
+        data["home_cards"] = make_cards_list(data["home_cards"])
+        data["away_cards"] = make_cards_list(data["away_cards"])
 
         return cls(**data)
 
@@ -193,6 +223,37 @@ class ScoreboardState:
         if 0 <= index < len(self.away_suspensions):
             del self.away_suspensions[index]
 
+
+    # ----- Cards -----
+
+    def cleanup_cards(self):
+        def still_active(c):
+            if hasattr(c, "remaining"):
+                return c.remaining() > 0
+            elif isinstance(c, dict):
+                # compute remaining manually
+                start = c.get("start_time", 0)
+                duration = c.get("duration", 0)
+                return (start + duration) > time.time()
+            return False
+
+        self.home_cards = [c for c in self.home_cards if still_active(c)]
+        self.away_cards = [c for c in self.away_cards if still_active(c)]
+
+    def add_card_home(self, player: str, color: str = "yellow", duration: int = 10):
+        self.home_cards.append(Card(player, time.time(), duration, color))
+
+    def add_card_away(self, player: str, color: str = "yellow", duration: int = 10):
+        self.away_cards.append(Card(player, time.time(), duration, color))
+
+    def delete_card_home(self, index: int):
+        if 0 <= index < len(self.home_cards):
+            del self.home_cards[index]
+
+    def delete_card_away(self, index: int):
+        if 0 <= index < len(self.away_cards):
+            del self.away_cards[index]
+
     # ----- Timeouts -----
 
     def start_timeout_home(self):
@@ -221,6 +282,8 @@ class ScoreboardState:
         self.start_time = None
         self.home_suspensions = []
         self.away_suspensions = []
+        self.home_cards = []
+        self.away_cards = []
         self.home_timeout_end = None
         self.away_timeout_end = None
 
@@ -252,6 +315,7 @@ class ScoreboardState:
         self.update_time()
         self.update_timeouts()
         self.cleanup_suspensions()
+        self.cleanup_cards()
 
         return {
             "home_team": self.home_team,
@@ -266,6 +330,8 @@ class ScoreboardState:
             "away_color": self.away_color,
             "home_suspensions": [s.to_dict() for s in self.home_suspensions],
             "away_suspensions": [s.to_dict() for s in self.away_suspensions],
+            "home_cards": [s.to_dict() for s in self.home_cards],
+            "away_cards": [s.to_dict() for s in self.away_cards],
             "home_timeout_active": self.home_timeout_end is not None,
             "away_timeout_active": self.away_timeout_end is not None,
             "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time())) if self.home_timeout_end else 0,

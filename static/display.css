@@ -104,22 +104,23 @@
     margin-top: 6px;
 }
 
-.penalty-badge {
-    background: rgba(255,255,255,0.15);
+.penalty-badge, .card-badge {
+    background: rgba(255, 255, 255, 0.596);
     padding: 4px 8px;
     border-radius: 6px;
     font-size: 0.8rem;
     font-weight: 600;
     display: inline-block;
     border: 1px solid white;
+    color: #000;
 }
 
-.penalty-badge.yellow {
+.card-badge.yellow {
     background: #ffd633;
     color: #000;
 }
 
-.penalty-badge.red {
+.card-badge.red {
     background: #ff3333;
     color: #fff;
 }

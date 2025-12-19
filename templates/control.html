@@ -99,17 +99,14 @@
             <h2>Suspensions (2 Minutes)</h2>
 
             <div class="suspension-row">
-                <input id="home_susp_player" type="text" placeholder="Home player #"><br>
-                <button onclick="addSuspension('home', null)">+2 min Home</button>
-                <button onclick="addSuspension('home', 'yellow')">Yellow Card</button>
-                <button onclick="addSuspension('home', 'red')">Red Card</button>
+                <input id="home_susp_player" type="text" placeholder="Home player #">
+                <button onclick="addSuspension('home')">+2 min Home</button>
             </div>
 
             <div class="suspension-row">
-                <input id="away_susp_player" type="text" placeholder="Away player #"><br>
-                <button onclick="addSuspension('away', null)">+2 min Away</button>
-                <button onclick="addSuspension('away', 'yellow')">Yellow Card</button>
-                <button onclick="addSuspension('away', 'red')">Red Card</button>
+                <input id="away_susp_player" type="text" placeholder="Away player #">
+                <button onclick="addSuspension('away')">+2 min Away</button>
+
             </div>
 
             <h3>Active Suspensions</h3>
@@ -121,6 +118,35 @@
                 <div>
                     <strong>Away</strong>
                     <ul id="susp_list_away"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="control-section">
+            <h2>Cards</h2>
+
+            <div class="cards-row">
+                <input id="home_card_player" type="text" placeholder="Home player #">
+                <button onclick="addCard('home', 'yellow')">Yellow Card</button>
+                <button onclick="addCard('home', 'red')">Red Card</button>Card
+
+                <div class="cards-row">
+                    <input id="away_card_player" type="text" placeholder="Away player #">
+                    <button onclick="addCard('away', 'yellow')">Yellow Card</button>
+                    <button onclick="addCard('away', 'red')">Red Card</button>Card
+
+                    <h3>Active Cards</h3>
+                    <div class="cards-lists">
+                        <div>
+                            <strong>Home</strong>
+                            <ul id="cards_list_home"></ul>
+                        </div>
+                        <div>
+                            <strong>Away</strong>
+                            <ul id="cards_list_away"></ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

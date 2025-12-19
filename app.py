@@ -77,7 +77,6 @@ def handle_update(data):
         if isinstance(susp, dict):
             state.add_suspension_home(
                 susp.get("player", "??"),
-                susp.get("card")  # may be None
             )
         else:
             player = str(susp).strip() or "??"
@@ -88,7 +87,6 @@ def handle_update(data):
         if isinstance(susp, dict):
             state.add_suspension_away(
                 susp.get("player", "??"),
-                susp.get("card")
             )
         else:
             player = str(susp).strip() or "??"
@@ -103,6 +101,41 @@ def handle_update(data):
     if "delete_suspension_away" in data:
         try:
             state.delete_suspension_away(int(data["delete_suspension_away"]))
+        except Exception:
+            pass
+
+   # Cards
+    if "add_card_home" in data:
+        card = data["add_card_home"]
+        if isinstance(card, dict):
+            state.add_card_home(
+                card.get("player", "??"),
+                card.get("card")  # may be None
+            )
+        else:
+            player = str(card).strip() or "??"
+            state.add_card_home(player, None)
+
+    if "add_card_away" in data:
+        card = data["add_card_away"]
+        if isinstance(card, dict):
+            state.add_card_away(
+                card.get("player", "??"),
+                card.get("card")
+            )
+        else:
+            player = str(card).strip() or "??"
+            state.add_card_away(player, None)
+
+    if "delete_card_home" in data:
+        try:
+            state.delete_card_home(int(data["delete_card_home"]))
+        except Exception:
+            pass
+
+    if "delete_card_away" in data:
+        try:
+            state.delete_card_away(int(data["delete_card_away"]))
         except Exception:
             pass
 
@@ -157,6 +190,7 @@ def timer_thread():
             state.update_time()
             state.update_timeouts()
             state.cleanup_suspensions()
+            state.cleanup_cards()
             state.save()
             broadcast_state(state)
         except Exception as e:

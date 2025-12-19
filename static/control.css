@@ -220,3 +220,7 @@ td {
     width: 5rem;
     margin: 8px;
 }
+
+.links a, .links a:hover, .links a:visited{
+    color: white;
+}

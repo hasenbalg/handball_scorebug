@@ -108,7 +108,6 @@ class ScoreboardState:
             out = []
             for c in lst:
                 if isinstance(c, dict):
-                    print(c)
                     out.append(Card(
                         player=c.get("player"),
                         start_time=c.get("start_time"),

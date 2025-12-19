@@ -7,7 +7,6 @@ class Suspension:
     player: str
     start_time: float
     duration: int
-    card: str  # "yellow" or "red"
 
     def remaining(self) -> int:
         elapsed = int(time.time() - self.start_time)
@@ -16,6 +15,5 @@ class Suspension:
     def to_dict(self) -> dict:
         return {
             "player": self.player,
-            "card": self.card,
             "remaining": self.remaining()
         }

@@ -95,7 +95,6 @@ class ScoreboardState:
                         player=s.get("player"),
                         start_time=s.get("start_time"),
                         duration=s.get("duration"),
-                        card=s.get("card")
                     ))
                 else:
                     out.append(s)
@@ -209,11 +208,11 @@ class ScoreboardState:
         self.home_suspensions = [s for s in self.home_suspensions if still_active(s)]
         self.away_suspensions = [s for s in self.away_suspensions if still_active(s)]
 
-    def add_suspension_home(self, player: str, card: str = "yellow", duration: int = 120):
-        self.home_suspensions.append(Suspension(player, time.time(), duration, card))
+    def add_suspension_home(self, player: str, duration: int = 120):
+        self.home_suspensions.append(Suspension(player, time.time(), duration))
 
-    def add_suspension_away(self, player: str, card: str = "yellow", duration: int = 120):
-        self.away_suspensions.append(Suspension(player, time.time(), duration, card))
+    def add_suspension_away(self, player: str, duration: int = 120):
+        self.away_suspensions.append(Suspension(player, time.time(), duration))
 
     def delete_suspension_home(self, index: int):
         if 0 <= index < len(self.home_suspensions):

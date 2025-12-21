@@ -1,36 +1,17 @@
 const socket = io();
 
-// SOUND ACTIVATION
-const buzzer = document.getElementById("buzzer");
-const activateBtn = document.getElementById("activate_sound");
-
-let soundEnabled = false;
-
-activateBtn.addEventListener("click", () => {
-    // Try to play a silent sound or the buzzer quietly
-    buzzer.volume = 0.01;
-    buzzer.play().then(() => {
-        buzzer.pause();
-        buzzer.currentTime = 0;
-        buzzer.volume = 1.0;
-
-        soundEnabled = true;
-        activateBtn.classList.add("hidden");
-        console.log("Sound activated");
-    }).catch(err => {
-        console.warn("Sound activation failed:", err);
-    });
-});
-
-
-// Format seconds → MM:SS
+// -----------------------------
+// TIME FORMAT
+// -----------------------------
 function formatTime(sec) {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// Convert hex → RGB
+// -----------------------------
+// COLOR UTILITIES
+// -----------------------------
 function hexToRgb(hex) {
     hex = hex.replace(/^#/, "");
     if (hex.length === 3) {
@@ -44,7 +25,6 @@ function hexToRgb(hex) {
     };
 }
 
-// Calculate luminance
 function getLuminance({ r, g, b }) {
     const a = [r, g, b].map(v => {
         v /= 255;
@@ -55,25 +35,92 @@ function getLuminance({ r, g, b }) {
     return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
 }
 
-// Choose black/white text based on background
 function getTextColor(bgHex) {
     const rgb = hexToRgb(bgHex);
     const lum = getLuminance(rgb);
     return lum > 0.5 ? "#000" : "#fff";
 }
 
-// BUZZER SOUND
-// Play buzzer when server says time is over
+// -----------------------------
+// SOUND ACTIVATION
+// -----------------------------
+const buzzer = document.getElementById("buzzer");
+const activateBtn = document.getElementById("activate_sound");
+
+let soundEnabled = false;
+if (activateBtn) {
+    activateBtn.addEventListener("click", () => {
+        buzzer.volume = 0.01;
+        buzzer.play().then(() => {
+            buzzer.pause();
+            buzzer.currentTime = 0;
+            buzzer.volume = 1.0;
+
+            soundEnabled = true;
+            activateBtn.classList.add("hidden");
+            console.log("Sound activated");
+        }).catch(err => {
+            console.warn("Sound activation failed:", err);
+        });
+    });
+}
+
+
+// -----------------------------
+// GOAL ANIMATION
+// -----------------------------
+let lastHomeScore = null;
+let lastAwayScore = null;
+
+function triggerGoalAnimation() {
+    const el = document.getElementById("goal_animation");
+
+    if (el) {
+        el.classList.remove("hidden");
+        el.classList.remove("play");
+
+        // Restart animation
+        void el.offsetWidth;
+
+        el.classList.add("play");
+
+        // Hide after animation
+        setTimeout(() => {
+            el.classList.add("hidden");
+        }, 2500);
+    }
+
+}
+
+function checkGoalAnimation(state) {
+    if (lastHomeScore !== null && state.home_score > lastHomeScore) {
+        triggerGoalAnimation();
+    }
+    if (lastAwayScore !== null && state.away_score > lastAwayScore) {
+        triggerGoalAnimation();
+    }
+
+    lastHomeScore = state.home_score;
+    lastAwayScore = state.away_score;
+}
+
+// -----------------------------
+// BUZZER EVENT
+// -----------------------------
 socket.on("time_over", () => {
-    if (!soundEnabled) return; // prevent autoplay errors
+    if (!soundEnabled) return;
 
     buzzer.currentTime = 0;
     buzzer.play().catch(err => console.warn("Autoplay blocked:", err));
 });
 
+// -----------------------------
 // MAIN STATE UPDATE
+// -----------------------------
 socket.on("state_update", (state) => {
-    console.log(state);
+
+    // Check for goals
+    checkGoalAnimation(state);
 
     // Show / hide scorebug
     const scorebug = document.getElementById("scorebug");

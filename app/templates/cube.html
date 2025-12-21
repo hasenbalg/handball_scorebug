@@ -55,9 +55,9 @@
     </div>
 
     <audio id="buzzer" src="{{ url_for('static', filename='air_horn.wav') }}"></audio>
-    
-    <button id="activate_sound" class="sound-btn">Activate Sound</button>
 
+    <button id="activate_sound" class="sound-btn">Activate Sound</button>
+    <div id="goal_animation" class="goal-anim hidden">GOAL!</div>
     <script src="{{ url_for('static', filename='display.js') }}"></script>
 </body>
 

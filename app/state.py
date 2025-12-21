@@ -6,7 +6,7 @@ from suspension import Suspension
 from card import Card
 
 # Redis connection
-r = redis.Redis(host="localhost", port=6379, db=0)
+r = redis.Redis(host="redis", port=6379, db=0)
 REDIS_KEY = "scoreboard_state"
 
 # Periods: (name, duration in seconds)

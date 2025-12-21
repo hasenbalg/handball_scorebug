@@ -6,6 +6,10 @@ A handball scoreburgbug that can be used with croma keying for a handball live v
 ![Backend](<Screenshot 2025-12-14 at 22-39-44 Handball Scoreboard Control.png>)
 ---
 
+# Run
+```
+docker compose up --build
+
 ## Requirements
 
 - Python 3.10+

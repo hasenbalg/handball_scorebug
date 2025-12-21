@@ -1,5 +1,6 @@
 Flask
-redis
 flask-socketio
-eventlet
+gunicorn
+gevent
+gevent-websocket
 redis

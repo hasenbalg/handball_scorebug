@@ -3,7 +3,7 @@ from flask_socketio import SocketIO
 from state import ScoreboardState
 
 import logging
-
+logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger("timer")
 
@@ -205,7 +205,15 @@ def timer_thread():
         socketio.sleep(1)
 
 
-if __name__ == "__main__":
-    log.info("Starting timer thread…")
-    socketio.start_background_task(timer_thread)
-    socketio.run(app, debug=True, use_reloader=False)
+@socketio.on("connect")
+def start_background_tasks():
+    global _timer_started
+    if not getattr(start_background_tasks, "_started", False):
+        socketio.start_background_task(timer_thread)
+        start_background_tasks._started = True
+
+
+# if __name__ == "__main__":
+#     log.info("Starting timer thread…")
+#     backgroundTask = socketio.start_background_task(timer_thread)
+#     socketio.run(app, async_mode="gevent", message_queue="redis://redis:6379/0", debug=True, use_reloader=False, host="0.0.0.0")

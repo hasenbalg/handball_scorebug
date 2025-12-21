@@ -74,23 +74,31 @@ let lastAwayScore = null;
 
 function triggerGoalAnimation() {
     const el = document.getElementById("goal_animation");
-
     if (el) {
-        el.classList.remove("hidden");
-        el.classList.remove("play");
+        // Remove all animation classes
+        el.classList.remove("hidden", "play", "side", "zoom");
+
+        // Pick a random animation
+        const animations = ["play", "side", "zoom"];
+        const chosen = animations[Math.floor(Math.random() * animations.length)];
 
         // Restart animation
         void el.offsetWidth;
 
-        el.classList.add("play");
+        // Apply chosen animation
+        el.classList.add(chosen);
 
-        // Hide after animation
+        // Show element
+        el.classList.remove("hidden");
+
+        // Hide after animation ends
         setTimeout(() => {
             el.classList.add("hidden");
         }, 2500);
     }
 
 }
+
 
 function checkGoalAnimation(state) {
     if (lastHomeScore !== null && state.home_score > lastHomeScore) {

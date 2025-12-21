@@ -191,8 +191,9 @@ body {
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 12rem;
+    font-size: 24rem;
     font-weight: 900;
+    letter-spacing: -1px;
     color: #ffdd00;
     text-shadow: 0 0 20px black;
     z-index: 9999;
@@ -252,4 +253,79 @@ body {
 
 .goal-anim.play {
     animation-name: goalSlideShake;
+}
+
+/* --- Animation 2: Side Bounce --- */
+@keyframes goalSideBounce {
+    0% {
+        transform: translate(-200%, -50%);
+        opacity: 0;
+    }
+
+    15% {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+
+    30% {
+        transform: translate(-40%, -50%);
+    }
+
+    45% {
+        transform: translate(-60%, -50%);
+    }
+
+    60% {
+        transform: translate(-50%, -50%);
+    }
+
+    85% {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(200%, -50%);
+        opacity: 0;
+    }
+}
+
+.goal-anim.side {
+    animation-name: goalSideBounce;
+}
+
+
+/* --- Animation 3: Zoom Pulse --- */
+@keyframes goalZoomPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.1);
+        opacity: 0;
+    }
+
+    20% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 1;
+    }
+
+    40% {
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+
+    60% {
+        transform: translate(-50%, -50%) scale(1.3);
+    }
+
+    80% {
+        transform: translate(-50%, -50%) scale(1.0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(0.1);
+        opacity: 0;
+    }
+}
+
+.goal-anim.zoom {
+    animation-name: goalZoomPulse;
 }

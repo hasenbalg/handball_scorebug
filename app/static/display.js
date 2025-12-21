@@ -73,32 +73,29 @@ let lastHomeScore = null;
 let lastAwayScore = null;
 
 function triggerGoalAnimation() {
-    const el = document.getElementById("goal_animation");
-    if (el) {
-        // Remove all animation classes
-        el.classList.remove("hidden", "play", "side", "zoom");
+    // Create the GOAL element
+    const el = document.createElement("div");
+    el.className = "goal-anim"; 
+    el.textContent = "GOAL!";
 
-        // Pick a random animation
-        const animations = ["play", "side", "zoom"];
-        const chosen = animations[Math.floor(Math.random() * animations.length)];
+    // Insert into DOM (top-level)
+    document.body.appendChild(el);
 
-        // Restart animation
-        void el.offsetWidth;
+    // Pick a random animation
+    const animations = ["play", "side", "zoom"];
+    const chosen = animations[Math.floor(Math.random() * animations.length)];
 
-        // Apply chosen animation
-        el.classList.add(chosen);
+    // Force reflow so animation restarts cleanly
+    void el.offsetWidth;
 
-        // Show element
-        el.classList.remove("hidden");
+    // Apply animation class
+    el.classList.add(chosen);
 
-        // Hide after animation ends
-        setTimeout(() => {
-            el.classList.add("hidden");
-        }, 2500);
-    }
-
+    // Remove element after animation ends
+    setTimeout(() => {
+        el.remove();
+    }, 2500);
 }
-
 
 function checkGoalAnimation(state) {
     if (lastHomeScore !== null && state.home_score > lastHomeScore) {

@@ -272,20 +272,24 @@ body {
     }
 
     45% {
-        transform: translate(-60%, -50%);
+        transform: translate(-60%, -50%) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) rotate(-3deg);
     }
 
     60% {
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) rotate(6deg);
     }
 
     85% {
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) rotate(0deg);
         opacity: 1;
     }
 
     100% {
-        transform: translate(200%, -50%);
+        transform: translate(200%, -50%) rotate(0deg);
         opacity: 0;
     }
 }

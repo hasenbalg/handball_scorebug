@@ -162,3 +162,20 @@ body {
     height: auto;
     display: block;
 }
+
+.sound-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    font-size: 18px;
+    background: #ffcc00;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 9999;
+}
+
+.sound-btn.hidden {
+    display: none;
+}

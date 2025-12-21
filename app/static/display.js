@@ -1,12 +1,36 @@
 const socket = io();
 
+// SOUND ACTIVATION
+const buzzer = document.getElementById("buzzer");
+const activateBtn = document.getElementById("activate_sound");
+
+let soundEnabled = false;
+
+activateBtn.addEventListener("click", () => {
+    // Try to play a silent sound or the buzzer quietly
+    buzzer.volume = 0.01;
+    buzzer.play().then(() => {
+        buzzer.pause();
+        buzzer.currentTime = 0;
+        buzzer.volume = 1.0;
+
+        soundEnabled = true;
+        activateBtn.classList.add("hidden");
+        console.log("Sound activated");
+    }).catch(err => {
+        console.warn("Sound activation failed:", err);
+    });
+});
+
+
+// Format seconds → MM:SS
 function formatTime(sec) {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// Utility: convert hex color to RGB
+// Convert hex → RGB
 function hexToRgb(hex) {
     hex = hex.replace(/^#/, "");
     if (hex.length === 3) {
@@ -20,7 +44,7 @@ function hexToRgb(hex) {
     };
 }
 
-// Utility: calculate relative luminance
+// Calculate luminance
 function getLuminance({ r, g, b }) {
     const a = [r, g, b].map(v => {
         v /= 255;
@@ -31,22 +55,29 @@ function getLuminance({ r, g, b }) {
     return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
 }
 
-// Decide text color based on background
+// Choose black/white text based on background
 function getTextColor(bgHex) {
     const rgb = hexToRgb(bgHex);
     const lum = getLuminance(rgb);
-    return lum > 0.5 ? "#000" : "#fff"; // light background → black text
+    return lum > 0.5 ? "#000" : "#fff";
 }
 
-socket.on("state_update", (state) => {
+// BUZZER SOUND
+// Play buzzer when server says time is over
+socket.on("time_over", () => {
+    if (!soundEnabled) return; // prevent autoplay errors
 
-    // Hide / Show Scorebug
+    buzzer.currentTime = 0;
+    buzzer.play().catch(err => console.warn("Autoplay blocked:", err));
+});
+
+// MAIN STATE UPDATE
+socket.on("state_update", (state) => {
+    console.log(state);
+
+    // Show / hide scorebug
     const scorebug = document.getElementById("scorebug");
-    if (state.hide_scorebug) {
-        scorebug.classList.add("hidden");
-    } else {
-        scorebug.classList.remove("hidden");
-    }
+    scorebug.classList.toggle("hidden", state.hide_scorebug);
 
     // Basic fields
     document.getElementById("home_team").textContent = state.home_team;
@@ -67,7 +98,7 @@ socket.on("state_update", (state) => {
     homeBlock.style.background = makeGradient(state.home_color);
     awayBlock.style.background = makeGradient(state.away_color);
 
-    // Adjust text color for team names and scores
+    // Text contrast
     const homeTextColor = getTextColor(state.home_color);
     const awayTextColor = getTextColor(state.away_color);
 
@@ -86,17 +117,14 @@ socket.on("state_update", (state) => {
     (state.home_suspensions || []).forEach(s => {
         const div = document.createElement("div");
         div.className = "penalty-badge";
-        let text = `#${s.player} ${formatTime(s.remaining)}`;
-
-        div.textContent = text;
+        div.textContent = `#${s.player} ${formatTime(s.remaining)}`;
         hb.appendChild(div);
     });
 
     (state.away_suspensions || []).forEach(s => {
         const div = document.createElement("div");
         div.className = "penalty-badge";
-        let text = `#${s.player} ${formatTime(s.remaining)}`;
-        div.textContent = text;
+        div.textContent = `#${s.player} ${formatTime(s.remaining)}`;
         ab.appendChild(div);
     });
 
@@ -104,17 +132,16 @@ socket.on("state_update", (state) => {
     (state.home_cards || []).forEach(s => {
         const div = document.createElement("div");
         div.className = "card-badge";
-        div.classList.add(s.color.toLowerCase()); // add CSS class for card color
+        div.classList.add(s.color.toLowerCase());
         div.textContent = `#${s.player}`;
         hb.appendChild(div);
     });
 
     (state.away_cards || []).forEach(s => {
-
         const div = document.createElement("div");
         div.className = "card-badge";
         div.classList.add(s.color.toLowerCase());
-        div.textContent = `#${s.player}`;;
+        div.textContent = `#${s.player}`;
         ab.appendChild(div);
     });
 

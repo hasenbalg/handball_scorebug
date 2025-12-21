@@ -52,6 +52,8 @@ class ScoreboardState:
     home_shootout: list | None = None
     away_shootout: list | None = None
 
+    buzzer_played: bool = False
+
     def __post_init__(self):
         if self.home_suspensions is None:
             self.home_suspensions = []
@@ -149,6 +151,12 @@ class ScoreboardState:
                     self.running = False
                     self.start_time = None
 
+                    # 🔔 Only emit once
+                    if not self.buzzer_played:
+                        from app import socketio
+                        socketio.emit("time_over")
+                        self.buzzer_played = True
+
     def compute_time(self):
         self.update_time()
         return self.format_time(self.elapsed_seconds)
@@ -179,17 +187,18 @@ class ScoreboardState:
         self.start_time = None
 
     # ----- Periods -----
-
     def next_period(self):
         self.stop_timer()
         self.period_index = min(len(PERIODS) - 1, self.period_index + 1)
         self.elapsed_seconds = 0
+        self.buzzer_played = False   # reset for next period
 
     def set_period_index(self, index: int):
         index = max(0, min(len(PERIODS) - 1, index))
         self.stop_timer()
         self.period_index = index
         self.elapsed_seconds = 0
+        self.buzzer_played = False
 
     # ----- Suspensions -----
 
@@ -284,6 +293,7 @@ class ScoreboardState:
         self.away_cards = []
         self.home_timeout_end = None
         self.away_timeout_end = None
+        self.buzzer_played = False
 
     # ----- Shootout -----
 

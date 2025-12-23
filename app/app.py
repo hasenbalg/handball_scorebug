@@ -58,6 +58,10 @@ def handle_update(data):
         state.home_score = int(data["home_score"])
     if "away_score" in data:
         state.away_score = int(data["away_score"])
+    if "home_score_change" in data:
+        state.home_score += int(data["home_score_change"])
+    if "away_score_change" in data:
+        state.away_score += int(data["away_score_change"])
 
     # Timer
     if "set_time" in data:

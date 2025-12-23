@@ -11,44 +11,46 @@
 <body class="display-body">
 
     <!-- SCOREBUG -->
-    <div class="scorebug" id="scorebug">
+    <div class="hs-border">
+        <div class="scorebug hs-background" id="scorebug">
+            <!-- HOME TEAM BLOCK -->
+            <div class="team-block home">
+                <div class="team-info">
+                    <div class="team-name" id="home_team">{{ game_state.home_team }}</div>
+                    <div class="cards home-cards penalties home-penalties" id="home_badges"></div>
+                    <div class="timeout-indicator" id="home_timeout"></div>
 
-        <!-- HOME TEAM BLOCK -->
-        <div class="team-block home">
-            <div class="team-info">
-                <div class="team-name" id="home_team">{{ game_state.home_team }}</div>
-                <div class="cards home-cards penalties home-penalties" id="home_badges"></div>
-                <div class="timeout-indicator" id="home_timeout"></div>
+                    <!-- HOME SHOOTOUT -->
+                    <div class="shootout-lane" id="shootout_home"></div>
+                </div>
 
-                <!-- HOME SHOOTOUT -->
-                <div class="shootout-lane" id="shootout_home"></div>
+                <div class="score" id="home_score">{{ game_state.home_score }}</div>
             </div>
 
-            <div class="score" id="home_score">{{ game_state.home_score }}</div>
-        </div>
-
-        <!-- CENTER BLOCK -->
-        <div class="center-block">
-            <div class="period" id="period">{{ game_state.period_name }}</div>
-            <div class="time" id="time">{{ game_state.time }}</div>
-        </div>
-
-        <!-- AWAY TEAM BLOCK -->
-        <div class="team-block away">
-            <div class="team-info">
-                <div class="team-name" id="away_team">{{ game_state.away_team }}</div>
-
-                <div class="penalties away-penalties" id="away_badges"></div>
-                <div class="timeout-indicator" id="away_timeout"></div>
-
-                <!-- AWAY SHOOTOUT -->
-                <div class="shootout-lane" id="shootout_away"></div>
+            <!-- CENTER BLOCK -->
+            <div class="center-block">
+                <div class="period" id="period">{{ game_state.period_name }}</div>
+                <div class="time" id="time">{{ game_state.time }}</div>
             </div>
 
-            <div class="score" id="away_score">{{ game_state.away_score }}</div>
-        </div>
+            <!-- AWAY TEAM BLOCK -->
+            <div class="team-block away">
+                <div class="team-info">
+                    <div class="team-name" id="away_team">{{ game_state.away_team }}</div>
 
+                    <div class="penalties away-penalties" id="away_badges"></div>
+                    <div class="timeout-indicator" id="away_timeout"></div>
+
+                    <!-- AWAY SHOOTOUT -->
+                    <div class="shootout-lane" id="shootout_away"></div>
+                </div>
+
+                <div class="score" id="away_score">{{ game_state.away_score }}</div>
+            </div>
+
+        </div>
     </div>
+
 
     <div class="logo">
         <img src="{{ url_for('static', filename='HandballLogo1.png') }}" alt="handballsociety.com">

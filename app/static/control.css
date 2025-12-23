@@ -30,7 +30,7 @@ h1 {
     background: #1a1d24;
     padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     border: 1px solid #2a2f3a;
 }
 
@@ -103,17 +103,19 @@ button:active {
     background: #00995c;
 }
 
-.del-button{
-    content : "✕";
-    margin-left : 10px;
+.del-button {
+    content: "✕";
+    margin-left: 10px;
     background-color: orange;
     color: #0f1116;
 }
 
-.del-button:hover{
+.del-button:hover {
     background-color: rgb(255, 115, 0);
 }
-.reset-button, .reset-button:hover{
+
+.reset-button,
+.reset-button:hover {
     background-color: red;
 }
 
@@ -168,7 +170,7 @@ button:active {
 .period-item.active {
     background: #2d7dff;
     color: white;
-    box-shadow: 0 0 10px rgba(45,125,255,0.6);
+    box-shadow: 0 0 10px rgba(45, 125, 255, 0.6);
 }
 
 /* TIMER ----------------------------------------------------------- */
@@ -212,15 +214,29 @@ td {
     color: #444;
 }
 
-.suspension-row{
+.suspension-row,
+.cards-row {
     margin-top: 1rem;
 }
 
-.suspension-row input{
+.suspension-row input,
+.cards-row input {
     width: 5rem;
-    margin: 8px;
+    margin: 8px 0;
 }
 
-.links a, .links a:hover, .links a:visited{
+.red-card-btn-bg {
+    background-color: rgb(192, 0, 0);
+    color: white;
+}
+
+.yellow-card-btn-bg {
+    background-color: rgb(194, 181, 0);
+    color: black;
+}
+
+.links a,
+.links a:hover,
+.links a:visited {
     color: white;
 }

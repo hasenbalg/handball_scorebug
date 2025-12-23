@@ -10,19 +10,27 @@ body {
 
 /* Scorebug container (centered, large) */
 .scorebug {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    background: #111;
+    padding: 40px 80px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     gap: 100px;
+}
 
-    background: #111;
-    padding: 40px 80px;
-    border-radius: 20px;
-    box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+.hs-border {
+    background: #EDDD53;
+    background: linear-gradient(24deg, rgba(237, 221, 83, 1) 0%, rgba(255, 255, 255, 1) 50%, rgba(237, 221, 83, 1) 100%);
+    padding: 3px;
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.hs-background {
+    background-image: url(/static/bg.svg);
 }
 
 /* Team blocks: stack name, score, badges, timeout */
@@ -59,7 +67,7 @@ body {
     gap: 20px;
     padding: 20px 40px;
     background: #222;
-    border-radius: 16px;
+    border-radius: 1px;
     box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
 }
 

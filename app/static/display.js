@@ -46,15 +46,17 @@ document.addEventListener("touchstart", activateSoundOnce, { once: true });
 document.addEventListener("scroll", activateSoundOnce, { once: true });
 
 function activateSoundOnce() {
-    buzzer.volume = 0.01;
-    buzzer.play().then(() => {
-        buzzer.pause();
-        buzzer.currentTime = 0;
-        buzzer.volume = 1.0;
-        soundEnabled = true;
-        activateBtn?.classList.add("hidden");
-        console.log("Sound activated");
-    }).catch(err => console.warn("Sound activation failed:", err));
+    if (buzzer) {
+        buzzer.volume = 0.01;
+        buzzer.play().then(() => {
+            buzzer.pause();
+            buzzer.currentTime = 0;
+            buzzer.volume = 1.0;
+            soundEnabled = true;
+            activateBtn?.classList.add("hidden");
+            console.log("Sound activated");
+        }).catch(err => console.warn("Sound activation failed:", err));
+    }
 }
 
 // -----------------------------
@@ -77,7 +79,7 @@ function triggerGoalAnimation() {
 }
 
 function checkGoalAnimation(state) {
-    if (state.running) {
+    if (state.running && !window.location.pathname == '/display') {
         if (lastHomeScore !== null && state.home_score > lastHomeScore) triggerGoalAnimation();
         if (lastAwayScore !== null && state.away_score > lastAwayScore) triggerGoalAnimation();
     }

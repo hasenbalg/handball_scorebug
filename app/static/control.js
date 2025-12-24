@@ -269,6 +269,10 @@ document.addEventListener("keydown", (e) => {
     if (key === "t") {
         document.getElementById("time").focus();
     }
+
+    if (key === "c") {
+        sendUpdate({side_change: true});
+    }
 });
 
 document.getElementById("time").addEventListener("change", applyTimeChange);

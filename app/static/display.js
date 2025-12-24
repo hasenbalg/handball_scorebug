@@ -77,8 +77,10 @@ function triggerGoalAnimation() {
 }
 
 function checkGoalAnimation(state) {
-    if (lastHomeScore !== null && state.home_score > lastHomeScore) triggerGoalAnimation();
-    if (lastAwayScore !== null && state.away_score > lastAwayScore) triggerGoalAnimation();
+    if (state.running) {
+        if (lastHomeScore !== null && state.home_score > lastHomeScore) triggerGoalAnimation();
+        if (lastAwayScore !== null && state.away_score > lastAwayScore) triggerGoalAnimation();
+    }
 
     lastHomeScore = state.home_score;
     lastAwayScore = state.away_score;

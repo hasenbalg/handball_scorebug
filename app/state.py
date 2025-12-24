@@ -192,6 +192,7 @@ class ScoreboardState:
         self.period_index = min(len(PERIODS) - 1, self.period_index + 1)
         self.elapsed_seconds = 0
         self.buzzer_played = False   # reset for next period
+        self.side_change()
 
     def set_period_index(self, index: int):
         index = max(0, min(len(PERIODS) - 1, index))
@@ -316,6 +317,19 @@ class ScoreboardState:
             self.home_shootout.pop()
         if not is_home and self.away_shootout:
             self.away_shootout.pop()
+
+    def side_change(self):
+        tmp_team = self.home_team
+        tmp_color = self.home_color
+        tmp_score = self.home_score
+
+        self.home_team = self.away_team
+        self.home_color = self.away_color
+        self.home_score = self.away_score
+
+        self.away_team = tmp_team
+        self.away_color = tmp_color
+        self.away_score = tmp_score
 
     # ----- Public dict -----
 

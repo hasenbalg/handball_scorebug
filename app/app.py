@@ -188,6 +188,9 @@ def handle_update(data):
     if "shootout_undo_away" in data:
         state.undo_shootout(False)
 
+    if "side_change" in data:
+        state.side_change()
+
     state.save()
     broadcast_state(state)
 

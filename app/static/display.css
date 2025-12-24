@@ -18,8 +18,9 @@
     gap: 28px;
 
     background: rgba(0, 0, 0, 0.55);
-    padding: 16px 32px;
-    border-radius: 18px;
+    padding: 16px;
+    background-image: url(/static/bg.svg);
+    /* border-radius: 18px; */
     backdrop-filter: blur(12px);
     box-shadow: 0 6px 28px rgba(0,0,0,0.45);
     border: 1px solid rgba(255,255,255,0.08);
@@ -39,8 +40,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 12px 22px;
-    border-radius: 12px;
+    padding: 16px;
     min-width: 240px;
     justify-content: space-between;
     box-shadow: inset 0 0 12px rgba(255,255,255,0.15);
@@ -71,13 +71,17 @@
 }
 
 /* Center block */
+.hs-border {
+    background: #EDDD53;
+    background: linear-gradient(24deg, rgba(237, 221, 83, 1) 0%, rgba(255, 255, 255, 1) 50%, rgba(237, 221, 83, 1) 100%);
+    padding: 3px;
+}
 .center-block {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px 22px;
-    background: rgba(0,0,0,0.35);
-    border-radius: 12px;
+    padding: 16px;
+    background: rgba(4, 0, 0, 0.83);
     box-shadow: inset 0 0 12px rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.1);
 }

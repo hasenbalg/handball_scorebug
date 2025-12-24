@@ -340,3 +340,88 @@ body {
 .goal-anim.zoom {
     animation-name: goalZoomPulse;
 }
+
+
+/* Bagel Fat One */
+@font-face {
+    font-family: 'Bagel Fat One';
+    src: url('/static/fonts/Bagel_Fat_One/BagelFatOne-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-bagel-fat-one {
+    font-family: 'Bagel Fat One', sans-serif;
+}
+
+/* Bungee Shade */
+@font-face {
+    font-family: 'Bungee Shade';
+    src: url('/static/fonts/Bungee_Shade/BungeeShade-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-bungee-shade {
+    font-family: 'Bungee Shade', sans-serif;
+}
+
+/* Chelsea Market */
+@font-face {
+    font-family: 'Chelsea Market';
+    src: url('/static/fonts/Chelsea_Market/ChelseaMarket-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-chelsea-market {
+    font-family: 'Chelsea Market', sans-serif;
+}
+
+/* Original Surfer */
+@font-face {
+    font-family: 'Original Surfer';
+    src: url('/static/fonts/Original_Surfer/OriginalSurfer-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-original-surfer {
+    font-family: 'Original Surfer', sans-serif;
+}
+
+/* Racing Sans One */
+@font-face {
+    font-family: 'Racing Sans One';
+    src: url('/static/fonts/Racing_Sans_One/RacingSansOne-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-racing-sans-one {
+    font-family: 'Racing Sans One', sans-serif;
+}
+
+/* Special Elite */
+@font-face {
+    font-family: 'Special Elite';
+    src: url('/static/fonts/Special_Elite/SpecialElite-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-special-elite {
+    font-family: 'Special Elite', monospace;
+}
+
+/* Ultra */
+@font-face {
+    font-family: 'Ultra';
+    src: url('/static/fonts/Ultra/Ultra-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-ultra {
+    font-family: 'Ultra', serif;
+}

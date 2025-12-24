@@ -72,14 +72,26 @@ function triggerGoalAnimation() {
     document.body.appendChild(el);
 
     const animations = ["play", "side", "zoom"];
-    el.classList.add(animations[Math.floor(Math.random() * animations.length)]);
-
+    const fonts = [
+        "font-bagel-fat-one",
+        "font-bungee-shade",
+        "font-chelsea-market",
+        "font-original-surfer",
+        "font-racing-sans-one",
+        "font-special-elite",
+        "font-ultra",
+    ];
+    const animation = animations[Math.floor(Math.random() * animations.length)];
+    el.classList.add(animation);
+    const font = fonts[Math.floor(Math.random() * fonts.length)];
+    el.classList.add(font);
+debugger;
     void el.offsetWidth; // restart animation
     setTimeout(() => el.remove(), 2500);
 }
 
 function checkGoalAnimation(state) {
-    if (state.running && !window.location.pathname == '/display') {
+    if (state.running && !(window.location.pathname == '/display')) {
         if (lastHomeScore !== null && state.home_score > lastHomeScore) triggerGoalAnimation();
         if (lastAwayScore !== null && state.away_score > lastAwayScore) triggerGoalAnimation();
     }

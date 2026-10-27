@@ -131,6 +131,14 @@ socket.on("state_update", (state) => {
     } else {
         awayStatus.textContent = '';
     }
+
+    // Technical timeout status (#6)
+    const techStatus = document.getElementById("technical_timeout_status");
+    if (techStatus) {
+        techStatus.textContent = state.technical_timeout_active
+            ? `Active – ${formatTime(state.technical_timeout_remaining)}`
+            : '';
+    }
 });
 
 function sendUpdate(payload) {

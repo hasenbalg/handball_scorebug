@@ -143,6 +143,16 @@ function renderTimeout(el, active, remaining) {
     }
 }
 
+function renderTechnicalTimeout(el, active, remaining) {
+    if (!el) return;
+    if (active) {
+        el.textContent = `TECHNICAL TIMEOUT ${formatTime(remaining)}`;
+        el.style.display = "block";
+    } else {
+        el.style.display = "none";
+    }
+}
+
 function renderShootout(lane, results) {
     lane.innerHTML = "";
     results.forEach(r => {
@@ -219,6 +229,11 @@ socket.on("state_update", (state) => {
         document.getElementById("away_timeout"),
         state.away_timeout_active,
         state.away_timeout_remaining
+    );
+    renderTechnicalTimeout(
+        document.getElementById("technical_timeout"),
+        state.technical_timeout_active,
+        state.technical_timeout_remaining
     );
 
     // Shootout

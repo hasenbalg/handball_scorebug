@@ -56,6 +56,7 @@ class ScoreboardState:
     # Timeouts
     home_timeout_end: float | None = None
     away_timeout_end: float | None = None
+    technical_timeout_end: float | None = None
     TIMEOUT_DURATION: int = 60  # seconds
 
     hide_scorebug: bool = False
@@ -374,12 +375,20 @@ class ScoreboardState:
         self.away_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.stop_timer()
 
+    def start_technical_timeout(self):
+        """2:8c-type interruption (injury, floor cleaning, referee decision):
+        neutral time-out, game clock stopped, separate countdown (#6)."""
+        self.technical_timeout_end = time.time() + self.TIMEOUT_DURATION
+        self.stop_timer()
+
     def update_timeouts(self):
         now = time.time()
         if self.home_timeout_end and now >= self.home_timeout_end:
             self.home_timeout_end = None
         if self.away_timeout_end and now >= self.away_timeout_end:
             self.away_timeout_end = None
+        if self.technical_timeout_end and now >= self.technical_timeout_end:
+            self.technical_timeout_end = None
 
     # ----- Reset -----
 
@@ -400,6 +409,7 @@ class ScoreboardState:
         self.away_cards = []
         self.home_timeout_end = None
         self.away_timeout_end = None
+        self.technical_timeout_end = None
         self.buzzer_played = False
         self.home_shootout = []
         self.away_shootout = []
@@ -521,6 +531,8 @@ class ScoreboardState:
             "away_timeout_active": self.away_timeout_end is not None,
             "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time())) if self.home_timeout_end else 0,
             "away_timeout_remaining": max(0, int(self.away_timeout_end - time.time())) if self.away_timeout_end else 0,
+            "technical_timeout_active": self.technical_timeout_end is not None,
+            "technical_timeout_remaining": max(0, int(self.technical_timeout_end - time.time())) if self.technical_timeout_end else 0,
             "hide_scorebug": self.hide_scorebug,
             "auto_stop_on_suspension": self.auto_stop_on_suspension,
             "at_period_cap": self.elapsed_seconds >= self.period_definitions()[self.period_index][1],

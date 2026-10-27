@@ -167,6 +167,8 @@ def handle_update(data):
         state.start_timeout_home()
     if data.get("timeout_away"):
         state.start_timeout_away()
+    if data.get("technical_timeout"):
+        state.start_technical_timeout()
 
     # Reset
     if data.get("reset"):

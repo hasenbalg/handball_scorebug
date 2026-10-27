@@ -739,3 +739,71 @@ class BreakTimerTest(unittest.TestCase):
         finally:
             state_mod.r = original
         self.assertIsNone(s.break_end)
+class ExportReportTest(unittest.TestCase):
+    """#12: match report (JSON/CSV) built from state + scorer lists + log.
+
+    app.py is imported under a private name with flask stubbed out, so
+    only the pure report builders are exercised here."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib
+        import types as _types
+        saved = {}
+        for name in ("flask", "flask_socketio"):
+            saved[name] = sys.modules.get(name)
+        flask_stub = _types.ModuleType("flask")
+
+        class _App:
+            def __init__(self, *a, **k): pass
+            def route(self, *a, **k):
+                return lambda fn: fn
+            def run(self, *a, **k): pass
+        flask_stub.Flask = _App
+        flask_stub.render_template = lambda *a, **k: ""
+        flask_stub.Response = lambda body, **k: body
+        sys.modules["flask"] = flask_stub
+        fso = _types.ModuleType("flask_socketio")
+
+        class _SO:
+            def __init__(self, *a, **k): pass
+            def on(self, *a, **k):
+                return lambda fn: fn
+            def start_background_task(self, *a, **k): pass
+            def sleep(self, *a, **k): pass
+        fso.SocketIO = _SO
+        sys.modules["flask_socketio"] = fso
+        try:
+            cls.export = importlib.import_module("app")
+        finally:
+            del sys.modules["flask"], sys.modules["flask_socketio"]
+            for name, orig in saved.items():
+                if orig is not None:
+                    sys.modules[name] = orig
+            sys.modules.pop("app", None)
+
+    def test_goals_per_player(self):
+        g = self.export._goals_per_player(["7", "7", "11", None])
+        self.assertEqual(g, {"7": 2, "": 1, "11": 1})
+
+    def test_report_shape(self):
+        s = ScoreboardState()
+        s.home_team, s.away_team = "Eagles", "Ducks"
+        s.goal("home", "7")
+        s.goal("away", "3")
+        s.add_suspension_home("9")
+        r = self.export.build_report(s)
+        self.assertEqual(r["final_score"], {"home": 1, "away": 1})
+        self.assertEqual(r["goals_per_player"]["home"], {"7": 1})
+        self.assertEqual([e["type"] for e in r["match_log"]],
+                         ["goal", "goal", "suspension"])
+
+    def test_csv_contains_header_and_timeline(self):
+        s = ScoreboardState()
+        s.home_team = "A Team"
+        s.goal("home", "7")
+        csv_text = self.export.report_csv(self.export.build_report(s))
+        self.assertIn("A Team", csv_text)
+        self.assertIn("Goals per player", csv_text)
+        self.assertIn("Timeline", csv_text)
+        self.assertIn("goal", csv_text)

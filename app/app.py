@@ -1,8 +1,13 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, Response
 from flask_socketio import SocketIO
 from state import ScoreboardState
 
+import csv
+import io
 import logging
+import re
+import time
+from collections import Counter
 logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger("timer")
@@ -274,3 +279,87 @@ if __name__ == "__main__":
     log.info("Starting development server on :5000")
     socketio.run(app, async_mode="gevent", debug=True,
                  use_reloader=False, host="0.0.0.0", port=5000)
+
+
+# ----- Match report export (#12) -----
+
+def _safe_filename(name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", name)[:60] or "match"
+
+
+def _goals_per_player(scorers: list) -> dict:
+    """{'7': 3, '11': 2, '': 1} — goals keyed by player number, '' = unrecorded."""
+    counts = Counter(s if s is not None else "" for s in scorers)
+    return {k: v for k, v in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))}
+
+
+def build_report(state: ScoreboardState) -> dict:
+    return {
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "home_team": state.home_team,
+        "away_team": state.away_team,
+        "final_score": {"home": state.home_score, "away": state.away_score},
+        "period": state.period_name,
+        "match_type": state.match_type,
+        "half_minutes": state.half_minutes,
+        "overtime_enabled": state.overtime_enabled,
+        "shootout": {
+            "home": state.home_shootout,
+            "away": state.away_shootout,
+            "confirmed_winner": state.shootout_confirmed_winner,
+        },
+        "timeouts": {
+            "home": state.home_timeouts_taken,
+            "away": state.away_timeouts_taken,
+        },
+        "goals_per_player": {
+            "home": _goals_per_player(state.home_goal_scorers),
+            "away": _goals_per_player(state.away_goal_scorers),
+        },
+        "match_log": state.match_log,
+    }
+
+
+@app.route("/export/report.json")
+def export_json():
+    import json as _json
+    report = build_report(state)
+    fname = _safe_filename(f"{report['home_team']}_vs_{report['away_team']}.json")
+    return Response(
+        _json.dumps(report, indent=2, ensure_ascii=False),
+        mimetype="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )
+
+
+def report_csv(report: dict) -> str:
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["Handball Match Report"])
+    w.writerow(["Generated", report["generated_at"]])
+    w.writerow([report["home_team"], report["final_score"]["home"],
+                report["away_team"], report["final_score"]["away"]])
+    w.writerow([])
+    w.writerow(["Goals per player", "Home #", "Home goals", "Away #", "Away goals"])
+    h = list(report["goals_per_player"]["home"].items())
+    a = list(report["goals_per_player"]["away"].items())
+    for i in range(max(len(h), len(a))):
+        hp, hg = h[i] if i < len(h) else ("", "")
+        ap, ag = a[i] if i < len(a) else ("", "")
+        w.writerow(["", hp or "(unknown)", hg, ap or "(unknown)", ag])
+    w.writerow([])
+    w.writerow(["Timeline", "Period", "Type", "Side", "Player", "Detail"])
+    for e in report["match_log"]:
+        w.writerow([e["clock"], e["period"], e["type"], e["side"] or "",
+                    e["player"] or "", e["detail"] or ""])
+    return buf.getvalue()
+
+
+@app.route("/export/report.csv")
+def export_csv():
+    report = build_report(state)
+    fname = _safe_filename(f"{report['home_team']}_vs_{report['away_team']}.csv")
+    return Response(
+        report_csv(report), mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )

@@ -40,7 +40,8 @@ socket.on("state_update", (state) => {
     // HOME suspensions
     (state.home_suspensions || []).forEach((s, index) => {
         const li = document.createElement("li");
-        let text = `#${s.player} – ${formatTime(s.remaining)}`;
+        const dqH = (state.home_disqualified || []).includes(s.player);
+        let text = `#${s.player} – ${formatTime(s.remaining)} (×${(state.home_suspension_counts || {})[s.player] || 1})${dqH ? " DQ" : ""}`;
         li.textContent = text;
 
         const btn = document.createElement("button");
@@ -56,7 +57,8 @@ socket.on("state_update", (state) => {
     // AWAY suspensions
     (state.away_suspensions || []).forEach((s, index) => {
         const li = document.createElement("li");
-        let text = `#${s.player} – ${formatTime(s.remaining)}`;
+        const dqA = (state.away_disqualified || []).includes(s.player);
+        let text = `#${s.player} – ${formatTime(s.remaining)} (×${(state.away_suspension_counts || {})[s.player] || 1})${dqA ? " DQ" : ""}`;
         li.textContent = text;
 
         const btn = document.createElement("button");

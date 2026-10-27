@@ -9,6 +9,11 @@ from card import Card
 r = redis.Redis(host="redis", port=6379, db=0)
 REDIS_KEY = "scoreboard_state"
 
+
+def _player_key(player) -> str:
+    """Normalize a player identifier: '#7', ' 7 ' and '7' are the same player."""
+    return str(player).strip().lstrip("#")
+
 # Periods: (name, duration in seconds)
 PERIODS = [
     ("1st Half", 30 * 60),
@@ -36,6 +41,12 @@ class ScoreboardState:
     # Suspensions
     home_suspensions: list = field(default_factory=list)
     away_suspensions: list = field(default_factory=list)
+    # Cumulative suspensions per player, kept after the suspension expires
+    # (16:5: a third suspension of the same player is a disqualification)
+    home_suspension_counts: dict = field(default_factory=dict)
+    away_suspension_counts: dict = field(default_factory=dict)
+    home_disqualified: list = field(default_factory=list)
+    away_disqualified: list = field(default_factory=list)
 
     # Cards
     home_cards: list = field(default_factory=list)
@@ -82,6 +93,10 @@ class ScoreboardState:
         # Backward compatibility defaults
         data.setdefault("home_suspensions", [])
         data.setdefault("away_suspensions", [])
+        data.setdefault("home_suspension_counts", {})
+        data.setdefault("away_suspension_counts", {})
+        data.setdefault("home_disqualified", [])
+        data.setdefault("away_disqualified", [])
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
         data.setdefault("home_color", "#005eff")
@@ -102,7 +117,7 @@ class ScoreboardState:
                         start = s.get("start_time") or 0
                         duration = s.get("duration") or 0
                         remaining = max(0, int(duration - (time.time() - start)))
-                    out.append(Suspension(player=s.get("player"), remaining=remaining))
+                    out.append(Suspension(player=_player_key(s.get("player") or "??"), remaining=remaining))
                 else:
                     out.append(s)
             return out
@@ -225,19 +240,39 @@ class ScoreboardState:
         self.home_suspensions = [s for s in self.home_suspensions if still_active(s)]
         self.away_suspensions = [s for s in self.away_suspensions if still_active(s)]
 
+    def _register_suspension(self, counts: dict, disqualified: list, key: str):
+        counts[key] = counts.get(key, 0) + 1
+        if counts[key] >= 3 and key not in disqualified:
+            disqualified.append(key)  # 16:5/16:6d: third suspension = disqualification
+
+    def _revoke_suspension(self, counts: dict, disqualified: list, key: str):
+        # Undo of a mis-click: roll the progression back with it
+        if counts.get(key):
+            counts[key] -= 1
+            if counts[key] < 3 and key in disqualified:
+                disqualified.remove(key)
+
     def add_suspension_home(self, player: str, duration: int = 120):
-        self.home_suspensions.append(Suspension(player, duration))
+        key = _player_key(player)
+        self.home_suspensions.append(Suspension(key, duration))
+        self._register_suspension(self.home_suspension_counts, self.home_disqualified, key)
 
     def add_suspension_away(self, player: str, duration: int = 120):
-        self.away_suspensions.append(Suspension(player, duration))
+        key = _player_key(player)
+        self.away_suspensions.append(Suspension(key, duration))
+        self._register_suspension(self.away_suspension_counts, self.away_disqualified, key)
 
     def delete_suspension_home(self, index: int):
         if 0 <= index < len(self.home_suspensions):
-            del self.home_suspensions[index]
+            s = self.home_suspensions.pop(index)
+            if isinstance(s, Suspension):
+                self._revoke_suspension(self.home_suspension_counts, self.home_disqualified, _player_key(s.player))
 
     def delete_suspension_away(self, index: int):
         if 0 <= index < len(self.away_suspensions):
-            del self.away_suspensions[index]
+            s = self.away_suspensions.pop(index)
+            if isinstance(s, Suspension):
+                self._revoke_suspension(self.away_suspension_counts, self.away_disqualified, _player_key(s.player))
 
 
     # ----- Cards -----
@@ -298,6 +333,10 @@ class ScoreboardState:
         self.start_time = None
         self.home_suspensions = []
         self.away_suspensions = []
+        self.home_suspension_counts = {}
+        self.away_suspension_counts = {}
+        self.home_disqualified = []
+        self.away_disqualified = []
         self.home_cards = []
         self.away_cards = []
         self.home_timeout_end = None
@@ -410,6 +449,13 @@ class ScoreboardState:
             "away_color": self.away_color,
             "home_suspensions": [s.to_dict() for s in self.home_suspensions],
             "away_suspensions": [s.to_dict() for s in self.away_suspensions],
+            "home_suspension_counts": self.home_suspension_counts,
+            "away_suspension_counts": self.away_suspension_counts,
+            "home_disqualified": self.home_disqualified,
+            "away_disqualified": self.away_disqualified,
+            # On-court players: 7 minus players currently serving suspensions
+            "home_players_on_court": max(0, 7 - len(self.home_suspensions)),
+            "away_players_on_court": max(0, 7 - len(self.away_suspensions)),
             "home_cards": [s.to_dict() for s in self.home_cards],
             "away_cards": [s.to_dict() for s in self.away_cards],
             "home_timeout_active": self.home_timeout_end is not None,

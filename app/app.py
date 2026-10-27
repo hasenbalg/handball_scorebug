@@ -323,7 +323,7 @@ def build_report(state: ScoreboardState) -> dict:
 @app.route("/export/report.json")
 def export_json():
     import json as _json
-    report = build_report(state)
+    report = build_report(ScoreboardState.load())
     fname = _safe_filename(f"{report['home_team']}_vs_{report['away_team']}.json")
     return Response(
         _json.dumps(report, indent=2, ensure_ascii=False),
@@ -357,7 +357,7 @@ def report_csv(report: dict) -> str:
 
 @app.route("/export/report.csv")
 def export_csv():
-    report = build_report(state)
+    report = build_report(ScoreboardState.load())
     fname = _safe_filename(f"{report['home_team']}_vs_{report['away_team']}.csv")
     return Response(
         report_csv(report), mimetype="text/csv",

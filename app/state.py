@@ -51,6 +51,8 @@ class ScoreboardState:
     shootout_active: bool = False
     home_shootout: list = field(default_factory=list)
     away_shootout: list = field(default_factory=list)
+    shootout_starting_team: str = "home"
+    shootout_confirmed_winner: str | None = None
 
     buzzer_played: bool = False
 
@@ -304,12 +306,16 @@ class ScoreboardState:
         self.home_shootout = []
         self.away_shootout = []
         self.shootout_active = False
+        self.shootout_starting_team = "home"
+        self.shootout_confirmed_winner = None
         self.hide_scorebug = False
 
     # ----- Shootout -----
 
-    def start_shootout(self):
+    def start_shootout(self, starting_team: str = "home"):
         self.shootout_active = True
+        self.shootout_starting_team = starting_team if starting_team in ("home", "away") else "home"
+        self.shootout_confirmed_winner = None
         self.home_shootout = []
         self.away_shootout = []
 
@@ -317,16 +323,58 @@ class ScoreboardState:
         self.shootout_active = False
 
     def add_shootout_attempt(self, is_home: bool, success: bool):
+        if self.shootout_confirmed_winner:
+            return  # result confirmed: input locked until un-confirm
         if is_home:
             self.home_shootout.append(success)
         else:
             self.away_shootout.append(success)
 
     def undo_shootout(self, is_home: bool):
+        if self.shootout_confirmed_winner:
+            return  # undo requires un-confirm first
         if is_home and self.home_shootout:
             self.home_shootout.pop()
         if not is_home and self.away_shootout:
             self.away_shootout.pop()
+
+    # ----- Shootout protocol (IHF 2:2 Comment) -----
+
+    def suggested_shootout_winner(self) -> str | None:
+        """Winner forced by the rules, computed (never declared) — #15.
+
+        A goal difference counts only after BOTH teams had the same number
+        of throws: not before each has thrown five in the first phase, and
+        in continuation rounds at any equal count >= 6.
+        """
+        if not self.shootout_active or self.shootout_confirmed_winner:
+            return None
+        nh, na = len(self.home_shootout), len(self.away_shootout)
+        if nh == na and nh >= 5:
+            gh, ga = sum(self.home_shootout), sum(self.away_shootout)
+            if gh > ga:
+                return "home"
+            if ga > gh:
+                return "away"
+        return None
+
+    def next_shootout_team(self) -> str | None:
+        """Expected next thrower (warning-only hint; alternation assumed)."""
+        if not self.shootout_active or self.shootout_confirmed_winner:
+            return None
+        total = len(self.home_shootout) + len(self.away_shootout)
+        if total % 2 == 0:
+            return self.shootout_starting_team
+        return "away" if self.shootout_starting_team == "home" else "home"
+
+    def confirm_shootout_winner(self, team: str | None) -> None:
+        """Operator confirms a rule-forced suggestion — the only path to a
+        declared winner."""
+        if self.suggested_shootout_winner() == team:
+            self.shootout_confirmed_winner = team
+
+    def unconfirm_shootout_winner(self) -> None:
+        self.shootout_confirmed_winner = None
 
     def side_change(self):
         tmp_team = self.home_team
@@ -372,4 +420,8 @@ class ScoreboardState:
             "shootout_active": self.shootout_active,
             "home_shootout": self.home_shootout,
             "away_shootout": self.away_shootout,
+            "shootout_starting_team": self.shootout_starting_team,
+            "shootout_suggested_winner": self.suggested_shootout_winner(),
+            "shootout_confirmed_winner": self.shootout_confirmed_winner,
+            "shootout_next_team": self.next_shootout_team(),
         }

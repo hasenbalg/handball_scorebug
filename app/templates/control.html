@@ -185,16 +185,23 @@
 
         <div class="control-section">
             <h2>7m Shootout</h2>
-            <button onclick="sendUpdate({ shootout_start: true })">Start Shootout</button>
+            <label>Throws first:
+                <select id="shootout_start_team">
+                    <option value="home">Home</option>
+                    <option value="away">Away</option>
+                </select>
+            </label>
+            <button onclick="startShootout()">Start Shootout</button>
             <button onclick="sendUpdate({ shootout_stop: true })">End Shootout</button>
+            <div id="shootout_status"></div>
             <h3>Home</h3>
-            <button onclick="sendUpdate({ shootout_home_goal: true })">Goal</button>
-            <button onclick="sendUpdate({ shootout_home_miss: true })">Miss</button>
-            <button onclick="sendUpdate({ shootout_undo_home: true })">Undo</button>
+            <button onclick="sendUpdate({ shootout_home_goal: true })" class="so-input">Goal</button>
+            <button onclick="sendUpdate({ shootout_home_miss: true })" class="so-input">Miss</button>
+            <button onclick="sendUpdate({ shootout_undo_home: true })" class="so-input">Undo</button>
             <h3>Away</h3>
-            <button onclick="sendUpdate({ shootout_away_goal: true })">Goal</button>
-            <button onclick="sendUpdate({ shootout_away_miss: true })">Miss</button>
-            <button onclick="sendUpdate({ shootout_undo_away: true })">Undo</button>
+            <button onclick="sendUpdate({ shootout_away_goal: true })" class="so-input">Goal</button>
+            <button onclick="sendUpdate({ shootout_away_miss: true })" class="so-input">Miss</button>
+            <button onclick="sendUpdate({ shootout_undo_away: true })" class="so-input">Undo</button>
         </div>
     </div>
 

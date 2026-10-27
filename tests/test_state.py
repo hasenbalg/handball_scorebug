@@ -128,5 +128,81 @@ class ResetTest(unittest.TestCase):
         self.assertEqual(s.home_cards, [])
 
 
+class ShootoutProtocolTest(unittest.TestCase):
+    """Winner may only be forced after equal throw counts (IHF 2:2 Comment)."""
+
+    def seq(self, s, home, away):
+        for outcome in home:
+            s.add_shootout_attempt(True, outcome)
+        for outcome in away:
+            s.add_shootout_attempt(False, outcome)
+
+    def setUp(self):
+        self.s = ScoreboardState()
+        self.s.start_shootout()
+
+    def test_no_winner_before_both_threw_five(self):
+        # difference exists but away still has throws left in the first phase
+        self.seq(self.s, [True, True, True, True, True],
+                        [True, True, False, False])
+        self.assertIsNone(self.s.suggested_shootout_winner())  # 5 vs 4
+        self.s.add_shootout_attempt(False, False)
+        self.assertEqual(self.s.suggested_shootout_winner(), "home")  # 5/5, 4–2
+
+    def test_no_winner_on_early_equal_difference(self):
+        self.seq(self.s, [True, True, True, True], [True, True, False, False])
+        self.assertIsNone(self.s.suggested_shootout_winner())  # 3–2 at 4/4
+
+    def test_tie_continues_then_decides_at_equal_count(self):
+        self.seq(self.s, [True, True, True, False, False],
+                        [True, True, True, False, False])
+        self.assertIsNone(self.s.suggested_shootout_winner())  # 3–3 at 5/5
+        self.s.add_shootout_attempt(True, True)   # 4–3, away still to throw
+        self.assertIsNone(self.s.suggested_shootout_winner())
+        self.s.add_shootout_attempt(False, False)  # 4–3 at 6/6
+        self.assertEqual(self.s.suggested_shootout_winner(), "home")
+
+    def test_confirm_requires_matching_suggestion_then_locks(self):
+        self.seq(self.s, [True, True, True, True, True],
+                        [True, True, False, False, False])
+        self.s.confirm_shootout_winner("away")  # wrong: no-op
+        self.assertIsNone(self.s.shootout_confirmed_winner)
+        self.s.confirm_shootout_winner("home")
+        self.assertEqual(self.s.shootout_confirmed_winner, "home")
+
+        n_home = len(self.s.home_shootout)
+        self.s.add_shootout_attempt(True, True)   # locked
+        self.s.undo_shootout(True)                # locked
+        self.assertEqual(len(self.s.home_shootout), n_home)
+
+        self.s.unconfirm_shootout_winner()
+        self.s.undo_shootout(True)                # unlocked
+        self.assertEqual(len(self.s.home_shootout), n_home - 1)
+
+    def test_next_team_alternates_by_starting_team(self):
+        s = ScoreboardState()
+        s.start_shootout(starting_team="away")
+        self.assertEqual(s.next_shootout_team(), "away")
+        s.add_shootout_attempt(False, True)
+        self.assertEqual(s.next_shootout_team(), "home")
+        s.add_shootout_attempt(True, True)
+        self.assertEqual(s.next_shootout_team(), "away")
+
+    def test_start_shootout_resets_previous_result(self):
+        self.seq(self.s, [True] * 5, [False] * 5)
+        self.s.confirm_shootout_winner("home")
+        self.s.start_shootout("away")
+        self.assertIsNone(self.s.shootout_confirmed_winner)
+        self.assertEqual(self.s.home_shootout, [])
+        self.assertEqual(self.s.shootout_starting_team, "away")
+
+    def test_public_dict_exposes_protocol_fields(self):
+        self.seq(self.s, [True] * 5, [False] * 5)
+        d = self.s.to_public_dict()
+        self.assertEqual(d["shootout_suggested_winner"], "home")
+        self.assertIsNone(d["shootout_confirmed_winner"])
+        self.assertEqual(d["shootout_next_team"], "home")  # 10 throws: first team again
+
+
 if __name__ == "__main__":
     unittest.main()

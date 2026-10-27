@@ -94,7 +94,14 @@
             <div class="timer-buttons">
                 <button onclick="sendUpdate({start_timer: true})">Start (Space)</button>
                 <button onclick="sendUpdate({stop_timer: true})">Pause (Space)</button>
+                <button onclick="sendUpdate({referee_whistle: true})">🎙 Whistle (W)</button>
             </div>
+            <label>
+                <input id="auto_stop_susp" type="checkbox"
+                       onchange="sendUpdate({ auto_stop_on_suspension: this.checked })">
+                Auto-stop clock on suspension (2:8a)
+            </label>
+            <p id="clock-hint"></p>
         </div>
 
         <!-- Suspensions -->

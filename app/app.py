@@ -70,6 +70,10 @@ def handle_update(data):
         state.start_timer()
     if data.get("stop_timer"):
         state.stop_timer()
+    if data.get("referee_whistle"):
+        state.referee_whistle()
+    if "auto_stop_on_suspension" in data:
+        state.auto_stop_on_suspension = bool(data["auto_stop_on_suspension"])
 
     # Period
     if data.get("next_period"):

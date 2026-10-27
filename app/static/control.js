@@ -319,3 +319,32 @@ function renderShootoutStatus(state) {
 }
 
 socket.on("state_update", renderShootoutStatus);
+
+// -----------------------------
+// Referee whistle / clock rules (#11)
+// -----------------------------
+document.addEventListener("keydown", (e) => {
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+        return;
+    }
+    if (e.key.toLowerCase() === "w") {
+        e.preventDefault();
+        sendUpdate({ referee_whistle: true });
+    }
+});
+
+function renderClockRulesStatus(state) {
+    const cb = document.getElementById("auto_stop_susp");
+    if (cb && document.activeElement !== cb) {
+        cb.checked = !!state.auto_stop_on_suspension;
+    }
+    const hint = document.getElementById("clock-hint");
+    if (hint) {
+        hint.textContent =
+            (state.at_period_cap && !state.running)
+                ? "Clock at end of period. If this was a premature signal, keep the teams on court and play the remaining time (2:7)."
+                : "";
+    }
+}
+socket.on("state_update", renderClockRulesStatus);

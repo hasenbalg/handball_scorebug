@@ -274,5 +274,50 @@ class PunishmentProgressionTest(unittest.TestCase):
         self.assertEqual(s.home_disqualified, [])
 
 
+class ClockRulesTest(unittest.TestCase):
+    """2:8 mandatory time-outs: whistle stop/resume, suspension announcement."""
+
+    def test_whistle_stops_running_clock_and_resumes(self):
+        s = ScoreboardState()
+        s.start_timer()
+        s.referee_whistle()
+        self.assertFalse(s.running)
+        s.referee_whistle()
+        self.assertTrue(s.running)
+
+    def test_suspension_announcement_stops_clock_by_default(self):
+        s = ScoreboardState()
+        s.start_timer()
+        s.add_suspension_home("7")
+        self.assertFalse(s.running)
+
+    def test_auto_stop_can_be_disabled(self):
+        s = ScoreboardState()
+        s.auto_stop_on_suspension = False
+        s.start_timer()
+        s.add_suspension_away("11")
+        self.assertTrue(s.running)
+
+    def test_public_dict_exposes_clock_rule_fields(self):
+        s = ScoreboardState()
+        d = s.to_public_dict()
+        self.assertTrue(d["auto_stop_on_suspension"])
+        self.assertFalse(d["at_period_cap"])
+        s.set_time("30:00")
+        self.assertTrue(s.to_public_dict()["at_period_cap"])
+
+    def test_legacy_blobs_default_auto_stop_on(self):
+        class FakeRedis:
+            def get(self, key):
+                return json.dumps({"home_score": 3})
+
+        original, state_mod.r = state_mod.r, FakeRedis()
+        try:
+            s = ScoreboardState.load()
+        finally:
+            state_mod.r = original
+        self.assertTrue(s.auto_stop_on_suspension)
+
+
 if __name__ == "__main__":
     unittest.main()

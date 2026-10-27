@@ -58,6 +58,8 @@ class ScoreboardState:
     TIMEOUT_DURATION: int = 60  # seconds
 
     hide_scorebug: bool = False
+    # 2:8a: adding a suspension/DQ stops the clock for the announcement
+    auto_stop_on_suspension: bool = True
 
     shootout_active: bool = False
     home_shootout: list = field(default_factory=list)
@@ -97,6 +99,7 @@ class ScoreboardState:
         data.setdefault("away_suspension_counts", {})
         data.setdefault("home_disqualified", [])
         data.setdefault("away_disqualified", [])
+        data.setdefault("auto_stop_on_suspension", True)
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
         data.setdefault("home_color", "#005eff")
@@ -214,6 +217,14 @@ class ScoreboardState:
         self.running = False
         self.start_time = None
 
+    def referee_whistle(self):
+        """Referee whistle models the mandatory time-out (2:8): stops a
+        running clock, a second whistle resumes play."""
+        if self.running:
+            self.stop_timer()
+        else:
+            self.start_timer()
+
     # ----- Periods -----
     def next_period(self):
         self.stop_timer()
@@ -256,11 +267,18 @@ class ScoreboardState:
         key = _player_key(player)
         self.home_suspensions.append(Suspension(key, duration))
         self._register_suspension(self.home_suspension_counts, self.home_disqualified, key)
+        self._announcement_timeout()
 
     def add_suspension_away(self, player: str, duration: int = 120):
         key = _player_key(player)
         self.away_suspensions.append(Suspension(key, duration))
         self._register_suspension(self.away_suspension_counts, self.away_disqualified, key)
+        self._announcement_timeout()
+
+    def _announcement_timeout(self):
+        """2:8a: mandatory clock stop for the suspension announcement."""
+        if self.auto_stop_on_suspension:
+            self.stop_timer()
 
     def delete_suspension_home(self, index: int):
         if 0 <= index < len(self.home_suspensions):
@@ -463,6 +481,8 @@ class ScoreboardState:
             "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time())) if self.home_timeout_end else 0,
             "away_timeout_remaining": max(0, int(self.away_timeout_end - time.time())) if self.away_timeout_end else 0,
             "hide_scorebug": self.hide_scorebug,
+            "auto_stop_on_suspension": self.auto_stop_on_suspension,
+            "at_period_cap": self.elapsed_seconds >= PERIODS[self.period_index][1],
             "shootout_active": self.shootout_active,
             "home_shootout": self.home_shootout,
             "away_shootout": self.away_shootout,

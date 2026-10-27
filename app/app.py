@@ -74,6 +74,15 @@ def handle_update(data):
         state.referee_whistle()
     if "auto_stop_on_suspension" in data:
         state.auto_stop_on_suspension = bool(data["auto_stop_on_suspension"])
+    if "match_config" in data:
+        cfg = data["match_config"] or {}
+        state.set_match_configuration(
+            match_type=cfg.get("match_type"),
+            half_minutes=cfg.get("half_minutes"),
+            overtime_enabled=cfg.get("overtime_enabled"),
+        )
+        # config may shrink the period list; keep the index valid
+        state.set_period_index(state.period_index)
 
     # Period
     if data.get("next_period"):

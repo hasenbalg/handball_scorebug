@@ -319,5 +319,100 @@ class ClockRulesTest(unittest.TestCase):
         self.assertTrue(s.auto_stop_on_suspension)
 
 
+class MatchConfigurationTest(unittest.TestCase):
+    """#10: halves length (2:1), overtime structure (2:2), end swaps (R10 Comm)."""
+
+    def test_default_definitions_match_legacy_periods(self):
+        defs = ScoreboardState().period_definitions()
+        self.assertEqual([d[0] for d in defs], ["1st Half", "2nd Half", "60 Min"])
+        self.assertEqual([d[1] for d in defs], [1800, 1800, 3600])
+        self.assertEqual([d[2] for d in defs], [False, True, False])
+
+    def test_youth_half_length_sets_caps(self):
+        s = ScoreboardState()
+        s.set_match_configuration(half_minutes=25)
+        self.assertEqual([d[1] for d in s.period_definitions()][:2], [1500, 1500])
+        # clock stops at the shortened cap
+        s.elapsed_seconds = 1495
+        s.running = True
+        s.start_time = time.time() - 10
+        import types as _types
+        stub = _types.ModuleType("app")
+        setattr(stub, "socketio", _types.SimpleNamespace(emit=lambda *_: None))
+        original, sys.modules["app"] = sys.modules.get("app"), stub
+        try:
+            s.update_time()
+        finally:
+            if original is None:
+                del sys.modules["app"]
+            else:
+                sys.modules["app"] = original
+        self.assertEqual(s.elapsed_seconds, 25 * 60)
+        self.assertFalse(s.running)
+
+    def test_invalid_values_rejected(self):
+        s = ScoreboardState()
+        s.set_match_configuration(match_type="world-cup", half_minutes=17,
+                                  overtime_enabled=None)
+        self.assertEqual(s.match_type, "league")
+        self.assertEqual(s.half_minutes, 30)
+
+    def test_overtime_definitions_and_swap_flags(self):
+        s = ScoreboardState()
+        s.set_match_configuration(overtime_enabled=True)
+        defs = s.period_definitions()
+        self.assertEqual([d[0] for d in defs], [
+            "1st Half", "2nd Half",
+            "OT1 1st Half", "OT1 2nd Half",
+            "OT2 1st Half", "OT2 2nd Half", "60 Min"])
+        self.assertEqual([d[1] for d in defs], [1800, 1800, 300, 300, 300, 300, 3600])
+        # swap only at half-time of regular time and of each OT period
+        self.assertEqual([d[2] for d in defs],
+                         [False, True, False, True, False, True, False])
+
+    def test_next_period_swaps_only_where_required(self):
+        s = ScoreboardState(home_team="A", away_team="B")
+        s.set_match_configuration(overtime_enabled=True)
+        s.next_period()                     # HT: swap
+        self.assertEqual((s.home_team, s.away_team), ("B", "A"))
+        s.next_period()                     # into OT1: coin toss, no swap
+        self.assertEqual((s.home_team, s.away_team), ("B", "A"))
+        s.next_period()                     # OT half-time: swap
+        self.assertEqual((s.home_team, s.away_team), ("A", "B"))
+        s.next_period()                     # into OT2: no swap
+        self.assertEqual((s.home_team, s.away_team), ("A", "B"))
+
+    def test_disabling_overtime_clamps_period_index(self):
+        s = ScoreboardState()
+        s.set_match_configuration(overtime_enabled=True)
+        s.set_period_index(5)               # OT2 2nd Half
+        s.set_match_configuration(overtime_enabled=False)
+        s.set_period_index(s.period_index)  # what app.py does after config change
+        self.assertEqual(s.period_index, 2)
+
+    def test_config_survives_reset_and_loads_with_defaults(self):
+        s = ScoreboardState()
+        s.set_match_configuration(match_type="cup", half_minutes=20,
+                                  overtime_enabled=True)
+        s.reset()
+        self.assertEqual((s.match_type, s.half_minutes, s.overtime_enabled),
+                         ("cup", 20, True))
+        d = s.to_public_dict()
+        self.assertEqual(d["match_type"], "cup")
+        self.assertEqual(len(d["period_names"]), 7)
+
+        class FakeRedis:
+            def get(self, key):
+                return json.dumps({"home_score": 1})
+
+        original, state_mod.r = state_mod.r, FakeRedis()
+        try:
+            s2 = ScoreboardState.load()
+        finally:
+            state_mod.r = original
+        self.assertEqual((s2.match_type, s2.half_minutes, s2.overtime_enabled),
+                         ("league", 30, False))
+
+
 if __name__ == "__main__":
     unittest.main()

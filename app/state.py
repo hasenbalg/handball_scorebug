@@ -14,12 +14,13 @@ def _player_key(player) -> str:
     """Normalize a player identifier: '#7', ' 7 ' and '7' are the same player."""
     return str(player).strip().lstrip("#")
 
-# Periods: (name, duration in seconds)
-PERIODS = [
-    ("1st Half", 30 * 60),
-    ("2nd Half", 30 * 60),
-    ("60 Min", 60 * 60),
-]
+# Period definitions are per-state (see ScoreboardState.period_definitions);
+# the match configuration (#10) decides halves length, overtime and the
+# free '60 Min' running-time period. Each definition is
+# (name, cap_seconds, swap_ends_on_entry).
+# Rule basis: teams change ends for the second half of each period
+# (Rule 10 Comment); a NEW coin toss precedes each overtime period, so
+# entering overtime and switching OT periods must NOT auto-swap.
 
 
 @dataclass
@@ -61,6 +62,11 @@ class ScoreboardState:
     # 2:8a: adding a suspension/DQ stops the clock for the announcement
     auto_stop_on_suspension: bool = True
 
+    # Match configuration (#10)
+    match_type: str = "league"      # league | cup | friendly
+    half_minutes: int = 30          # 30 senior, 25 (u16), 20 (u12) — 2:1
+    overtime_enabled: bool = False  # knockout matches (2:2)
+
     shootout_active: bool = False
     home_shootout: list = field(default_factory=list)
     away_shootout: list = field(default_factory=list)
@@ -100,6 +106,9 @@ class ScoreboardState:
         data.setdefault("home_disqualified", [])
         data.setdefault("away_disqualified", [])
         data.setdefault("auto_stop_on_suspension", True)
+        data.setdefault("match_type", "league")
+        data.setdefault("half_minutes", 30)
+        data.setdefault("overtime_enabled", False)
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
         data.setdefault("home_color", "#005eff")
@@ -155,9 +164,37 @@ class ScoreboardState:
 
     # ----- Time -----
 
+    def period_definitions(self) -> list[tuple[str, int, bool]]:
+        """(name, cap_seconds, swap_ends_on_entry) for the current config."""
+        hm = self.half_minutes if self.half_minutes in (20, 25, 30) else 30
+        defs = [("1st Half", hm * 60, False), ("2nd Half", hm * 60, True)]
+        if self.overtime_enabled:
+            defs += [
+                ("OT1 1st Half", 5 * 60, False),   # new coin toss: no auto-swap
+                ("OT1 2nd Half", 5 * 60, True),    # half-time of the OT period
+                ("OT2 1st Half", 5 * 60, False),   # new coin toss again
+                ("OT2 2nd Half", 5 * 60, True),
+            ]
+        defs.append(("60 Min", 60 * 60, False))
+        return defs
+
+    def set_match_configuration(self, match_type=None, half_minutes=None,
+                                overtime_enabled=None):
+        if match_type in ("league", "cup", "friendly"):
+            self.match_type = match_type
+        if half_minutes is not None:
+            try:
+                hm = int(half_minutes)
+            except (TypeError, ValueError):
+                hm = None
+            if hm in (20, 25, 30):
+                self.half_minutes = hm
+        if overtime_enabled is not None:
+            self.overtime_enabled = bool(overtime_enabled)
+
     @property
     def period_name(self) -> str:
-        return PERIODS[self.period_index][0]
+        return self.period_definitions()[self.period_index][0]
 
     def update_time(self):
         if self.running and self.start_time is not None:
@@ -165,7 +202,7 @@ class ScoreboardState:
             elapsed = now - self.start_time
 
             if elapsed >= 1:
-                period_cap = PERIODS[self.period_index][1]
+                period_cap = self.period_definitions()[self.period_index][1]
                 # Never run the game clock past the period cap; suspension
                 # time is served on the game clock (2:8), so it advances by
                 # exactly the same amount and freezes whenever we don't run.
@@ -228,13 +265,17 @@ class ScoreboardState:
     # ----- Periods -----
     def next_period(self):
         self.stop_timer()
-        self.period_index = min(len(PERIODS) - 1, self.period_index + 1)
+        defs = self.period_definitions()
+        idx = min(len(defs) - 1, self.period_index + 1)
+        self.period_index = idx
         self.elapsed_seconds = 0
         self.buzzer_played = False   # reset for next period
-        self.side_change()
+        if defs[idx][2]:             # swap ends only where the rules say so
+            self.side_change()
 
     def set_period_index(self, index: int):
-        index = max(0, min(len(PERIODS) - 1, index))
+        defs = self.period_definitions()
+        index = max(0, min(len(defs) - 1, index))
         self.stop_timer()
         self.period_index = index
         self.elapsed_seconds = 0
@@ -482,7 +523,11 @@ class ScoreboardState:
             "away_timeout_remaining": max(0, int(self.away_timeout_end - time.time())) if self.away_timeout_end else 0,
             "hide_scorebug": self.hide_scorebug,
             "auto_stop_on_suspension": self.auto_stop_on_suspension,
-            "at_period_cap": self.elapsed_seconds >= PERIODS[self.period_index][1],
+            "at_period_cap": self.elapsed_seconds >= self.period_definitions()[self.period_index][1],
+            "match_type": self.match_type,
+            "half_minutes": self.half_minutes,
+            "overtime_enabled": self.overtime_enabled,
+            "period_names": [d[0] for d in self.period_definitions()],
             "shootout_active": self.shootout_active,
             "home_shootout": self.home_shootout,
             "away_shootout": self.away_shootout,

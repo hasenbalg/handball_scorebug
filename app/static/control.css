@@ -264,3 +264,10 @@ td {
 #match_log .entry .home { color: #6ea8ff; }
 #match_log .entry .away { color: #ff8a8a; }
 #match_log .entry .neutral { color: #ff8c00; }
+
+/* Scorer number input (#4) */
+.scorer-input {
+    width: 42px;
+    margin-left: 8px;
+    text-align: center;
+}

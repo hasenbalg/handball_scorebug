@@ -37,6 +37,8 @@
                 <button onclick="changeScore('home', -1)">-</button>
                 <span id="home_score">{{ game_state.home_score }}</span>
                 <button onclick="changeScore('home', 1)">+</button>
+                <input id="home_scorer" class="scorer-input" placeholder="#" maxlength="3"
+                       title="Scorer number (optional)">
             </div>
 
             <div class="score-row">
@@ -44,6 +46,8 @@
                 <button onclick="changeScore('away', -1)">-</button>
                 <span id="away_score">{{ game_state.away_score }}</span>
                 <button onclick="changeScore('away', 1)">+</button>
+                <input id="away_scorer" class="scorer-input" placeholder="#" maxlength="3"
+                       title="Scorer number (optional)">
             </div>
 
             <table>

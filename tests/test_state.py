@@ -526,5 +526,44 @@ class MatchLogTest(unittest.TestCase):
         self.assertEqual(s.match_log, [])
 
 
+class ScorerTest(unittest.TestCase):
+    """#4: scorer number recorded per goal, brief overlay flash."""
+
+    def setUp(self):
+        self.s = ScoreboardState()
+
+    def test_goal_records_scorer_and_logs(self):
+        self.s.goal("home", "#23")
+        self.s.goal("home", "23")
+        self.s.goal("home")
+        self.assertEqual(self.s.home_score, 3)
+        self.assertEqual(self.s.home_goal_scorers, ["23", "23", None])
+        goals = [e for e in self.s.match_log if e["type"] == "goal"]
+        self.assertEqual([e["player"] for e in goals], ["23", "23", None])
+
+    def test_last_scorer_exposed(self):
+        self.s.goal("away", "7")
+        ls = self.s.to_public_dict()["last_scorer"]
+        self.assertEqual((ls["side"], ls["player"]), ("away", "7"))
+
+    def test_undo_goal_pops_scorer_and_clears_flash(self):
+        self.s.goal("home", "9")
+        self.s.undo_goal("home")
+        self.assertEqual(self.s.home_score, 0)
+        self.assertEqual(self.s.home_goal_scorers, [])
+        self.assertIsNone(self.s.to_public_dict()["last_scorer"])
+
+    def test_undo_other_side_keeps_flash(self):
+        self.s.goal("home", "9")
+        self.s.undo_goal("away")  # nothing to undo away
+        self.assertIsNotNone(self.s.last_scorer)  # home flash untouched
+
+    def test_reset_clears_scorers(self):
+        self.s.goal("home", "1")
+        self.s.reset()
+        self.assertEqual(self.s.home_goal_scorers, [])
+        self.assertIsNone(self.s.last_scorer)
+
+
 if __name__ == "__main__":
     unittest.main()

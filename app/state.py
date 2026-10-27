@@ -295,6 +295,10 @@ class ScoreboardState:
         self.home_timeout_end = None
         self.away_timeout_end = None
         self.buzzer_played = False
+        self.home_shootout = []
+        self.away_shootout = []
+        self.shootout_active = False
+        self.hide_scorebug = False
 
     # ----- Shootout -----
 

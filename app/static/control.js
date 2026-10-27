@@ -361,6 +361,9 @@ function logEntryLabel(e) {
         case "technical_timeout": return "TECH TIMEOUT";
         case "period": return "→ " + (e.detail || "");
         case "7m": return e.detail === "goal" ? "7m GOAL" : "7m MISS";
+        case "passive_on": return "PASSIVE SIGNAL";
+        case "passive_off": return "passive off";
+        case "passive_expired": return "PASSIVE EXPIRED";
         default: return e.type.toUpperCase();
     }
 }
@@ -383,6 +386,28 @@ function renderMatchLog(state) {
 }
 
 socket.on("state_update", renderMatchLog);
+
+// -----------------------------
+// Passive play (#3)
+// -----------------------------
+function renderPassive(state) {
+    const status = document.getElementById("passive_status");
+    const bh = document.getElementById("btn_passive_home");
+    const ba = document.getElementById("btn_passive_away");
+    if (!status || !bh) return;
+    const team = state.passive_team;
+    for (const [el, t] of [[bh, "home"], [ba, "away"]]) {
+        el.classList.toggle("passive-active", team === t);
+    }
+    if (!team) { status.textContent = ""; return; }
+    if (state.passive_expired) {
+        status.textContent = "Passes used up — turnover on the next whistle";
+    } else {
+        status.textContent = `${team.toUpperCase()} must shoot within ${state.passive_passes} pass(es)`;
+    }
+}
+
+socket.on("state_update", renderPassive);
 
 // -----------------------------
 // Referee whistle / clock rules (#11)

@@ -264,6 +264,21 @@ socket.on("state_update", (state) => {
         el.innerHTML = html;
     }
 
+    // Passive play indicator (#3)
+    for (const side of ["home", "away"]) {
+        const el = document.getElementById("passive_" + side);
+        if (!el) continue;
+        if (state.passive_team === side) {
+            el.textContent = state.passive_expired
+                ? "PASSIVE!"
+                : `PASSIVE ${state.passive_passes}`;
+            el.classList.toggle("expired", !!state.passive_expired);
+            el.style.display = "block";
+        } else {
+            el.style.display = "none";
+        }
+    }
+
     // Shootout
     const homeLane = document.getElementById("shootout_home");
     const awayLane = document.getElementById("shootout_away");

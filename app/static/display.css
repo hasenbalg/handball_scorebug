@@ -221,3 +221,18 @@
     color: #fff;
     border-color: #7a0000;
 }
+
+/* Technical timeout indicator, center block (#6) */
+.tech-timeout {
+    display: none;
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: #ff8c00;
+    color: #1a1a1a;
+    font-size: 0.55em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border: 2px solid #1a1a1a;
+    text-align: center;
+    white-space: nowrap;
+}

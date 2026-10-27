@@ -414,5 +414,40 @@ class MatchConfigurationTest(unittest.TestCase):
                          ("league", 30, False))
 
 
+class TechnicalTimeoutTest(unittest.TestCase):
+    """#6: neutral interruption (2:8c) — clock stops, 1-minute countdown."""
+
+    def test_technical_timeout_stops_clock_and_counts_down(self):
+        s = ScoreboardState()
+        s.start_timer()
+        s.start_technical_timeout()
+        self.assertFalse(s.running)
+        d = s.to_public_dict()
+        self.assertTrue(d["technical_timeout_active"])
+        self.assertIn(d["technical_timeout_remaining"], (59, 60))
+
+    def test_technical_timeout_expires(self):
+        s = ScoreboardState()
+        s.start_technical_timeout()
+        s.technical_timeout_end = time.time() - 1
+        s.update_timeouts()
+        self.assertIsNone(s.technical_timeout_end)
+        self.assertFalse(s.to_public_dict()["technical_timeout_active"])
+
+    def test_reset_clears_technical_timeout(self):
+        s = ScoreboardState()
+        s.start_technical_timeout()
+        s.reset()
+        self.assertIsNone(s.technical_timeout_end)
+
+    def test_team_timeouts_unaffected(self):
+        s = ScoreboardState()
+        s.start_timeout_home()
+        s.start_technical_timeout()
+        d = s.to_public_dict()
+        self.assertTrue(d["home_timeout_active"])
+        self.assertTrue(d["technical_timeout_active"])
+
+
 if __name__ == "__main__":
     unittest.main()

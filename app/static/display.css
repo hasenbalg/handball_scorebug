@@ -104,6 +104,7 @@
 /* Penalties */
 .penalties {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 6px;
 }
@@ -117,6 +118,8 @@
     display: inline-block;
     border: 1px solid white;
     color: #000;
+    white-space: nowrap;   /* #35: badge text never breaks across lines */
+    flex: 0 0 auto;
 }
 
 .card-badge.yellow {

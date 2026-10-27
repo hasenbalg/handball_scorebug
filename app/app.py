@@ -90,7 +90,7 @@ def handle_update(data):
             )
         else:
             player = str(susp).strip() or "??"
-            state.add_suspension_home(player, None)
+            state.add_suspension_home(player)
 
     if "add_suspension_away" in data:
         susp = data["add_suspension_away"]
@@ -100,7 +100,7 @@ def handle_update(data):
             )
         else:
             player = str(susp).strip() or "??"
-            state.add_suspension_away(player, None)
+            state.add_suspension_away(player)
 
     if "delete_suspension_home" in data:
         try:

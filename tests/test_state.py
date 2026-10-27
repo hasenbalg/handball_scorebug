@@ -1,10 +1,97 @@
+import json
 import os
 import sys
+import time
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
+import state as state_mod  # noqa: E402
 from state import ScoreboardState  # noqa: E402
+
+
+class SuspensionGameClockTest(unittest.TestCase):
+    """Suspensions must be served on the GAME clock (IHF 16:3 with 2:8)."""
+
+    def test_suspension_advances_with_running_game_clock(self):
+        s = ScoreboardState()
+        s.add_suspension_home("7")  # 120s default
+        s.running = True
+        s.start_time = time.time() - 10
+        s.update_time()
+        self.assertEqual(s.elapsed_seconds, 10)
+        self.assertEqual(s.home_suspensions[0].remaining, 110)
+
+    def test_suspension_frozen_while_clock_stopped(self):
+        s = ScoreboardState()
+        s.add_suspension_home("7")
+        s.running = True
+        s.start_time = time.time() - 5
+        s.update_time()
+        s.stop_timer()
+
+        # A minute of real time passes while the game clock is stopped
+        # (ball out / time-out / half time) — served time must NOT advance.
+        s.start_time = time.time() - 60
+        s.update_time()
+        self.assertEqual(s.home_suspensions[0].remaining, 115)
+        self.assertEqual(s.elapsed_seconds, 5)
+
+    def test_suspension_ticks_do_not_pass_period_cap(self):
+        s = ScoreboardState()
+        s.add_suspension_home("7")
+        s.elapsed_seconds = 30 * 60 - 3  # period cap is 1800s
+        s.running = True
+        s.start_time = time.time() - 30
+
+        # End-of-period emits "time_over" via the app module (pulls in
+        # flask); stub it so this test needs no web deps.
+        import types
+        emitted = []
+        stub = types.ModuleType("app")
+        setattr(stub, "socketio", types.SimpleNamespace(emit=emitted.append))
+        original, sys.modules["app"] = sys.modules.get("app"), stub
+        try:
+            s.update_time()
+        finally:
+            if original is None:
+                del sys.modules["app"]
+            else:
+                sys.modules["app"] = original
+
+        self.assertEqual(s.elapsed_seconds, 30 * 60)
+        self.assertEqual(s.home_suspensions[0].remaining, 117)
+        self.assertFalse(s.running)
+        self.assertEqual(emitted, ["time_over"])
+
+    def test_cleanup_drops_expired_suspensions(self):
+        s = ScoreboardState()
+        s.add_suspension_home("7")
+        s.add_suspension_away("11")
+        s.home_suspensions[0].remaining = 0
+        s.cleanup_suspensions()
+        self.assertEqual(s.home_suspensions, [])
+        self.assertEqual(len(s.away_suspensions), 1)
+
+    def test_legacy_wallclock_state_migrates_on_load(self):
+        blob = json.dumps({
+            "home_suspensions": [
+                {"player": "9", "start_time": time.time() - 30, "duration": 120},
+            ],
+        })
+
+        class FakeRedis:
+            def get(self, key):
+                return blob
+
+        original, state_mod.r = state_mod.r, FakeRedis()
+        try:
+            s = ScoreboardState.load()
+        finally:
+            state_mod.r = original
+
+        self.assertEqual(len(s.home_suspensions), 1)
+        self.assertIn(s.home_suspensions[0].remaining, (89, 90, 91))
 
 
 class ResetTest(unittest.TestCase):

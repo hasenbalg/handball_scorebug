@@ -1,7 +1,7 @@
 import json
 import time
 import redis
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from suspension import Suspension
 from card import Card
 
@@ -34,12 +34,12 @@ class ScoreboardState:
     away_color: str = "#ff3b3b"
 
     # Suspensions
-    home_suspensions: list | None = None
-    away_suspensions: list | None = None
+    home_suspensions: list = field(default_factory=list)
+    away_suspensions: list = field(default_factory=list)
 
     # Cards
-    home_cards: list | None = None
-    away_cards: list | None = None
+    home_cards: list = field(default_factory=list)
+    away_cards: list = field(default_factory=list)
 
     # Timeouts
     home_timeout_end: float | None = None
@@ -49,8 +49,8 @@ class ScoreboardState:
     hide_scorebug: bool = False
 
     shootout_active: bool = False
-    home_shootout: list | None = None
-    away_shootout: list | None = None
+    home_shootout: list = field(default_factory=list)
+    away_shootout: list = field(default_factory=list)
 
     buzzer_played: bool = False
 
@@ -93,11 +93,14 @@ class ScoreboardState:
             out = []
             for s in lst:
                 if isinstance(s, dict):
-                    out.append(Suspension(
-                        player=s.get("player"),
-                        start_time=s.get("start_time"),
-                        duration=s.get("duration"),
-                    ))
+                    if "remaining" in s:
+                        remaining = int(s.get("remaining") or 0)
+                    else:
+                        # Legacy wall-clock format: convert once on load.
+                        start = s.get("start_time") or 0
+                        duration = s.get("duration") or 0
+                        remaining = max(0, int(duration - (time.time() - start)))
+                    out.append(Suspension(player=s.get("player"), remaining=remaining))
                 else:
                     out.append(s)
             return out
@@ -142,10 +145,18 @@ class ScoreboardState:
             elapsed = now - self.start_time
 
             if elapsed >= 1:
-                self.elapsed_seconds += int(elapsed)
+                period_cap = PERIODS[self.period_index][1]
+                # Never run the game clock past the period cap; suspension
+                # time is served on the game clock (2:8), so it advances by
+                # exactly the same amount and freezes whenever we don't run.
+                advance = min(int(elapsed), max(0, period_cap - self.elapsed_seconds))
+                self.elapsed_seconds += advance
                 self.start_time = now
 
-                period_cap = PERIODS[self.period_index][1]
+                for susp in (*self.home_suspensions, *self.away_suspensions):
+                    if isinstance(susp, Suspension):
+                        susp.tick(advance)
+
                 if self.elapsed_seconds >= period_cap:
                     self.elapsed_seconds = period_cap
                     self.running = False
@@ -205,23 +216,18 @@ class ScoreboardState:
 
     def cleanup_suspensions(self):
         def still_active(s):
-            if hasattr(s, "remaining"):
-                return s.remaining() > 0
-            elif isinstance(s, dict):
-                # compute remaining manually
-                start = s.get("start_time", 0)
-                duration = s.get("duration", 0)
-                return (start + duration) > time.time()
-            return False
+            # Suspensions are measured on the game clock; load() already
+            # rehydrates legacy wall-clock entries, anything else is stale.
+            return isinstance(s, Suspension) and s.remaining > 0
 
         self.home_suspensions = [s for s in self.home_suspensions if still_active(s)]
         self.away_suspensions = [s for s in self.away_suspensions if still_active(s)]
 
     def add_suspension_home(self, player: str, duration: int = 120):
-        self.home_suspensions.append(Suspension(player, time.time(), duration))
+        self.home_suspensions.append(Suspension(player, duration))
 
     def add_suspension_away(self, player: str, duration: int = 120):
-        self.away_suspensions.append(Suspension(player, time.time(), duration))
+        self.away_suspensions.append(Suspension(player, duration))
 
     def delete_suspension_home(self, index: int):
         if 0 <= index < len(self.home_suspensions):

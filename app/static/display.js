@@ -105,14 +105,25 @@ function checkGoalAnimation(state) {
 // -----------------------------
 const setText = (id, value) => (document.getElementById(id).textContent = value);
 
-function renderBadges(container, suspensions, cards) {
+function renderBadges(container, suspensions, cards, disqualified) {
     container.innerHTML = "";
 
     suspensions?.forEach(s => {
         const div = document.createElement("div");
-        div.className = "penalty-badge";
-        div.textContent = `#${s.player} ${formatTime(s.remaining)}`;
+        const dq = (disqualified || []).includes(s.player);
+        div.className = "penalty-badge" + (dq ? " disqualified" : "");
+        div.textContent = `#${s.player} ${formatTime(s.remaining)}${dq ? " DQ" : ""}`;
         container.appendChild(div);
+    });
+
+    // Disqualified players whose suspension already expired: keep visible
+    (disqualified || []).forEach(p => {
+        if (!suspensions?.some(s => s.player === p)) {
+            const div = document.createElement("div");
+            div.className = "penalty-badge disqualified";
+            div.textContent = `#${p} DQ`;
+            container.appendChild(div);
+        }
     });
 
     cards?.forEach(c => {
@@ -160,8 +171,8 @@ socket.on("state_update", (state) => {
         .classList.toggle("hidden", state.hide_scorebug);
 
     // Basic fields
-    setText("home_team", state.home_team);
-    setText("away_team", state.away_team);
+    setText("home_team", state.home_team + (state.home_players_on_court < 7 ? ` ·${state.home_players_on_court}` : ""));
+    setText("away_team", state.away_team + (state.away_players_on_court < 7 ? ` ·${state.away_players_on_court}` : ""));
     setText("home_score", state.home_score);
     setText("away_score", state.away_score);
     setText("period", state.period_name);
@@ -188,12 +199,14 @@ socket.on("state_update", (state) => {
     renderBadges(
         document.getElementById("home_badges"),
         state.home_suspensions,
-        state.home_cards
+        state.home_cards,
+        state.home_disqualified
     );
     renderBadges(
         document.getElementById("away_badges"),
         state.away_suspensions,
-        state.away_cards
+        state.away_cards,
+        state.away_disqualified
     );
 
     // Timeouts

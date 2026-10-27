@@ -204,5 +204,75 @@ class ShootoutProtocolTest(unittest.TestCase):
         self.assertEqual(d["shootout_next_team"], "home")  # 10 throws: first team again
 
 
+class PunishmentProgressionTest(unittest.TestCase):
+    """16:5/16:6d: the third suspension of a player is a disqualification."""
+
+    def setUp(self):
+        self.s = ScoreboardState()
+
+    def test_counts_accumulate_and_dq_on_third(self):
+        self.s.add_suspension_home("7")
+        self.s.add_suspension_home("#7")   # same player, normalized
+        self.s.add_suspension_home("7")
+        self.assertEqual(self.s.home_suspension_counts["7"], 3)
+        self.assertEqual(self.s.home_disqualified, ["7"])
+        self.assertNotIn("11", self.s.away_disqualified)
+
+    def test_counts_survive_suspension_expiry(self):
+        self.s.add_suspension_home("9")
+        self.s.home_suspensions[0].remaining = 0
+        self.s.cleanup_suspensions()
+        self.assertEqual(self.s.home_suspensions, [])
+        self.assertEqual(self.s.home_suspension_counts["9"], 1)  # kept!
+
+    def test_undo_rolls_back_progression(self):
+        for _ in range(3):
+            self.s.add_suspension_home("7")
+            self.s.delete_suspension_home(0)  # operator undoes each
+        self.assertEqual(self.s.home_suspension_counts["7"], 0)
+        self.assertEqual(self.s.home_disqualified, [])
+
+    def test_two_players_third_suspension_each(self):
+        for p in ("7", "11"):
+            for _ in range(3):
+                self.s.add_suspension_away(p)
+        self.assertEqual(self.s.away_disqualified, ["7", "11"])
+        self.assertEqual(self.s.away_suspension_counts, {"7": 3, "11": 3})
+
+    def test_players_on_court_reflects_active_suspensions(self):
+        d = self.s.to_public_dict()
+        self.assertEqual(d["home_players_on_court"], 7)
+        self.s.add_suspension_home("7")
+        self.s.add_suspension_home("11")
+        d = self.s.to_public_dict()
+        self.assertEqual(d["home_players_on_court"], 5)
+        self.assertEqual(d["away_players_on_court"], 7)
+
+    def test_reset_clears_progression(self):
+        for _ in range(3):
+            self.s.add_suspension_home("7")
+        self.s.reset()
+        self.assertEqual(self.s.home_suspension_counts, {})
+        self.assertEqual(self.s.home_disqualified, [])
+
+    def test_legacy_load_gets_progression_defaults(self):
+        blob = json.dumps({"home_suspensions": [
+            {"player": "#4", "start_time": time.time(), "duration": 120},
+        ]})
+
+        class FakeRedis:
+            def get(self, key):
+                return blob
+
+        original, state_mod.r = state_mod.r, FakeRedis()
+        try:
+            s = ScoreboardState.load()
+        finally:
+            state_mod.r = original
+        self.assertEqual(s.home_suspensions[0].player, "4")
+        self.assertEqual(s.home_suspension_counts, {})
+        self.assertEqual(s.home_disqualified, [])
+
+
 if __name__ == "__main__":
     unittest.main()

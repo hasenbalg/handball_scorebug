@@ -247,3 +247,17 @@
     letter-spacing: 0.06em;
     white-space: nowrap;
 }
+/* Team time-out dots (#1) */
+.to-dots {
+    display: flex;
+    gap: 5px;
+    margin-top: 4px;
+}
+.to-dots .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid #fff;
+}
+.to-dots .dot.filled { background: #e11; border-color: #e11; }
+.to-dots .dot.over { background: #ff8c00; border-color: #ff8c00; }

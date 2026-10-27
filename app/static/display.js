@@ -250,6 +250,20 @@ socket.on("state_update", (state) => {
         }
     }
 
+    // Team time-out dots (#1): one filled red dot per taken TO, 3 allowed
+    for (const side of ["home", "away"]) {
+        const el = document.getElementById(side + "_to_dots");
+        if (!el) continue;
+        const q = state[side + "_timeouts"];
+        if (!q || !q.total) { el.innerHTML = ""; continue; }
+        let html = "";
+        for (let i = 0; i < Math.max(q.max, q.total); i++) {
+            const cls = i < q.total ? (i >= q.max ? "dot over" : "dot filled") : "dot";
+            html += `<span class="${cls}"></span>`;
+        }
+        el.innerHTML = html;
+    }
+
     // Shootout
     const homeLane = document.getElementById("shootout_home");
     const awayLane = document.getElementById("shootout_away");

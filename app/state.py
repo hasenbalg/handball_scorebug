@@ -83,6 +83,12 @@ class ScoreboardState:
     home_goal_scorers: list = field(default_factory=list)
     away_goal_scorers: list = field(default_factory=list)
     last_scorer: dict | None = None
+    # Team time-out quota, per 2:4 Comment (#1): entries are period
+    # slots ("half1" | "half2" | "ot"); max 3 per match, max 2 per half,
+    # none in overtime. Violations are flagged, never blocked (operator
+    # drives, app marks).
+    home_timeouts_taken: list = field(default_factory=list)
+    away_timeouts_taken: list = field(default_factory=list)
 
     def __post_init__(self):
         if self.home_suspensions is None:
@@ -123,6 +129,8 @@ class ScoreboardState:
         data.setdefault("match_log", [])
         data.setdefault("home_goal_scorers", [])
         data.setdefault("away_goal_scorers", [])
+        data.setdefault("home_timeouts_taken", [])
+        data.setdefault("away_timeouts_taken", [])
         data.setdefault("home_color", "#005eff")
         data.setdefault("away_color", "#ff3b3b")
 
@@ -258,6 +266,28 @@ class ScoreboardState:
     @property
     def period_name(self) -> str:
         return self.period_definitions()[self.period_index][0]
+
+    def _period_slot(self) -> str:
+        """Rule slot of the current period for the TO quota (2:4 Comment)."""
+        name = self.period_name
+        if name == "1st Half":
+            return "half1"
+        if name == "2nd Half":
+            return "half2"
+        return "ot"
+
+    @staticmethod
+    def _timeout_quota(taken: list) -> dict:
+        """Quota view of a team's taken time-outs: max 3 per match, max 2
+        per regular half, none in overtime (2:4 Comment). Flags only."""
+        h1, h2, ot = taken.count("half1"), taken.count("half2"), taken.count("ot")
+        return {
+            "total": len(taken), "max": 3,
+            "half1": h1, "half2": h2, "ot": ot,
+            "over_total": len(taken) > 3,
+            "over_half": h1 > 2 or h2 > 2,
+            "ot_used": ot > 0,
+        }
 
     def update_time(self):
         if self.running and self.start_time is not None:
@@ -447,11 +477,13 @@ class ScoreboardState:
 
     def start_timeout_home(self):
         self.home_timeout_end = time.time() + self.TIMEOUT_DURATION
+        self.home_timeouts_taken.append(self._period_slot())
         self.stop_timer()
         self.log_event("timeout", side="home")
 
     def start_timeout_away(self):
         self.away_timeout_end = time.time() + self.TIMEOUT_DURATION
+        self.away_timeouts_taken.append(self._period_slot())
         self.stop_timer()
         self.log_event("timeout", side="away")
 
@@ -502,6 +534,8 @@ class ScoreboardState:
         self.home_goal_scorers = []
         self.away_goal_scorers = []
         self.last_scorer = None
+        self.home_timeouts_taken = []
+        self.away_timeouts_taken = []
 
     # ----- Shootout -----
 
@@ -638,4 +672,6 @@ class ScoreboardState:
             "home_goal_scorers": self.home_goal_scorers,
             "away_goal_scorers": self.away_goal_scorers,
             "last_scorer": self.last_scorer,
+            "home_timeouts": self._timeout_quota(self.home_timeouts_taken),
+            "away_timeouts": self._timeout_quota(self.away_timeouts_taken),
         }

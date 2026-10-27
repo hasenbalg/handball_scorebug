@@ -1,12 +1,18 @@
 import json
+import os
 import time
 import redis
 from dataclasses import dataclass, asdict, field
 from suspension import Suspension
 from card import Card
 
-# Redis connection
-r = redis.Redis(host="redis", port=6379, db=0)
+# Redis connection: REDIS_URL (used by compose.yaml) or REDIS_HOST
+# (default localhost so `python app/app.py` works outside Docker)
+_url = os.environ.get("REDIS_URL")
+if _url:
+    r = redis.Redis.from_url(_url)
+else:
+    r = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"), port=6379, db=0)
 REDIS_KEY = "scoreboard_state"
 
 

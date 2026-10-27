@@ -269,7 +269,8 @@ def start_background_tasks():
         start_background_tasks._started = True
 
 
-# if __name__ == "__main__":
-#     log.info("Starting timer thread…")
-#     backgroundTask = socketio.start_background_task(timer_thread)
-#     socketio.run(app, async_mode="gevent", message_queue="redis://redis:6379/0", debug=True, use_reloader=False, host="0.0.0.0")
+if __name__ == "__main__":
+    # Local development entry point (production uses gunicorn, see Dockerfile)
+    log.info("Starting development server on :5000")
+    socketio.run(app, async_mode="gevent", debug=True,
+                 use_reloader=False, host="0.0.0.0", port=5000)

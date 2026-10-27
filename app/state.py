@@ -79,6 +79,11 @@ class ScoreboardState:
     # Match log / event timeline (#5) — chronological, persisted with state
     match_log: list = field(default_factory=list)
 
+    # Goals per player + last-scorer flash (#4)
+    home_goal_scorers: list = field(default_factory=list)
+    away_goal_scorers: list = field(default_factory=list)
+    last_scorer: dict | None = None
+
     def __post_init__(self):
         if self.home_suspensions is None:
             self.home_suspensions = []
@@ -116,6 +121,8 @@ class ScoreboardState:
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
         data.setdefault("match_log", [])
+        data.setdefault("home_goal_scorers", [])
+        data.setdefault("away_goal_scorers", [])
         data.setdefault("home_color", "#005eff")
         data.setdefault("away_color", "#ff3b3b")
 
@@ -190,6 +197,33 @@ class ScoreboardState:
         """Escape hatch for mis-clicked events."""
         if self.match_log:
             self.match_log.pop()
+
+    # ----- Score / scorers (#4) -----
+
+    def goal(self, side: str, scorer: str | None = None):
+        """Increment score; optionally record scorer number (#4)."""
+        key = _player_key(scorer) if scorer else None
+        if side == "away":
+            self.away_score += 1
+            self.away_goal_scorers.append(key)
+        else:
+            self.home_score += 1
+            self.home_goal_scorers.append(key)
+        self.last_scorer = {"side": side, "player": key, "at": int(time.time())}
+        self.log_event("goal", side=side, player=key)
+
+    def undo_goal(self, side: str):
+        """Correct a mis-clicked goal: remove score, scorer and flash."""
+        if side == "away":
+            self.away_score = max(0, self.away_score - 1)
+            if self.away_goal_scorers:
+                self.away_goal_scorers.pop()
+        else:
+            self.home_score = max(0, self.home_score - 1)
+            if self.home_goal_scorers:
+                self.home_goal_scorers.pop()
+        if self.last_scorer and self.last_scorer.get("side") == side:
+            self.last_scorer = None
 
     # ----- Time -----
 
@@ -465,6 +499,9 @@ class ScoreboardState:
         self.shootout_confirmed_winner = None
         self.hide_scorebug = False
         self.match_log = []
+        self.home_goal_scorers = []
+        self.away_goal_scorers = []
+        self.last_scorer = None
 
     # ----- Shootout -----
 
@@ -598,4 +635,7 @@ class ScoreboardState:
             "shootout_confirmed_winner": self.shootout_confirmed_winner,
             "shootout_next_team": self.next_shootout_team(),
             "match_log": self.match_log,
+            "home_goal_scorers": self.home_goal_scorers,
+            "away_goal_scorers": self.away_goal_scorers,
+            "last_scorer": self.last_scorer,
         }

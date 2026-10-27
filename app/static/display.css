@@ -236,3 +236,14 @@
     text-align: center;
     white-space: nowrap;
 }
+
+/* Last-scorer flash (#4) */
+.scorer-flash {
+    display: none;
+    margin-top: 4px;
+    color: #7fdc7f;
+    font-size: 0.5em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}

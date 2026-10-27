@@ -236,6 +236,20 @@ socket.on("state_update", (state) => {
         state.technical_timeout_remaining
     );
 
+    // Last-scorer flash (#4): show for ~6s after the goal
+    const now = Date.now() / 1000;
+    for (const side of ["home", "away"]) {
+        const el = document.getElementById("scorer_" + side);
+        if (!el) continue;
+        const ls = state.last_scorer;
+        if (ls && ls.side === side && ls.player && now - ls.at < 6) {
+            el.textContent = `GOAL #${ls.player}`;
+            el.style.display = "block";
+        } else {
+            el.style.display = "none";
+        }
+    }
+
     // Shootout
     const homeLane = document.getElementById("shootout_home");
     const awayLane = document.getElementById("shootout_away");

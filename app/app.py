@@ -58,14 +58,17 @@ def handle_update(data):
         state.home_score = int(data["home_score"])
     if "away_score" in data:
         state.away_score = int(data["away_score"])
-    if "home_score_change" in data:
-        state.home_score += int(data["home_score_change"])
-        if int(data["home_score_change"]) > 0:
-            state.log_event("goal", side="home")
-    if "away_score_change" in data:
-        state.away_score += int(data["away_score_change"])
-        if int(data["away_score_change"]) > 0:
-            state.log_event("goal", side="away")
+    # Score (+/- are goals with optional scorer #4; absolute set via
+    # "Save / Push" is a correction and deliberately not logged)
+    for side in ("home", "away"):
+        change = int(data.get(f"{side}_score_change", 0) or 0)
+        if change > 0:
+            scorer = data.get(f"{side}_scorer")
+            for _ in range(change):
+                state.goal(side, scorer)
+        elif change < 0:
+            for _ in range(-change):
+                state.undo_goal(side)
 
     # Timer
     if "set_time" in data:

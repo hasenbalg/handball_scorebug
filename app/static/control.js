@@ -174,10 +174,15 @@ function isGreenish(hex) {
 }
 
 function changeScore(team, delta) {
-    const id = team + "_score";
-    let value = parseInt(document.getElementById(id).textContent);
-    value = Math.max(0, value + delta);
-    sendUpdate({ [id]: value });
+    if (delta > 0) {
+        // Goal: server-side increment + optional scorer (#4)
+        const input = document.getElementById(team + "_scorer");
+        const scorer = input ? input.value.trim() : "";
+        sendUpdate({ [team + "_score_change"]: 1, [team + "_scorer"]: scorer || null });
+    } else {
+        // Correction: remove last goal (and its scorer)
+        sendUpdate({ [team + "_score_change"]: -1 });
+    }
 }
 
 function saveColors() {

@@ -264,6 +264,12 @@
         </div>
     </div>
 
+    <!-- Match report export (#12) -->
+    <div class="export-row">
+        <a class="save-button" href="/export/report.csv" download>Export CSV</a>
+        <a class="save-button" href="/export/report.json" download>Export JSON</a>
+    </div>
+
     <button class="save-button" onclick="saveState()">Save / Push Names & Scores (S)</button>
     <button class="save-button reset-button"
         onclick="if (confirm('Reset the entire game?')) sendUpdate({ reset: true })">

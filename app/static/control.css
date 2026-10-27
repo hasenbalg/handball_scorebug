@@ -275,3 +275,7 @@ td {
 /* Passive play (#3) */
 .passive-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .passive-active { outline: 3px solid #ffd400; }
+
+/* Export links (#12) */
+.export-row { display: flex; gap: 8px; margin: 8px 0; }
+.export-row a { text-decoration: none; }

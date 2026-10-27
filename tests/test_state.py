@@ -449,5 +449,82 @@ class TechnicalTimeoutTest(unittest.TestCase):
         self.assertTrue(d["technical_timeout_active"])
 
 
+class MatchLogTest(unittest.TestCase):
+    """#5: chronological event log, persisted with state."""
+
+    def setUp(self):
+        self.s = ScoreboardState()
+
+    def test_events_are_logged_with_game_time(self):
+        self.s.elapsed_seconds = 300
+        self.s.log_event("goal", side="home")
+        e = self.s.match_log[-1]
+        self.assertEqual((e["type"], e["side"], e["clock"]), ("goal", "home", "05:00"))
+        self.assertEqual(e["period"], "1st Half")
+
+    def test_suspension_and_dq_logged(self):
+        for _ in range(3):
+            self.s.add_suspension_home("7")
+        types = [(e["type"], e.get("player")) for e in self.s.match_log]
+        self.assertEqual(types, [("suspension", "7")] * 3 + [("disqualification", "7")])
+
+    def test_card_normalizes_color_and_logs(self):
+        self.s.add_card_home("#3", color=None)
+        e = self.s.match_log[-1]
+        self.assertEqual((e["type"], e["detail"]), ("card", "yellow"))
+        self.assertEqual(self.s.home_cards[0].color, "yellow")
+        self.assertEqual(self.s.home_cards[0].player, "3")
+
+    def test_period_changes_logged_only_on_change(self):
+        self.s.next_period()
+        self.assertEqual(self.s.match_log[-1]["type"], "period")
+        self.s.match_log.clear()
+        self.s.set_period_index(self.s.period_index)  # no-op clamp
+        self.assertEqual(self.s.match_log, [])
+        self.s.set_period_index(0)
+        self.assertEqual(self.s.match_log[-1]["detail"], "1st Half")
+
+    def test_shootout_and_technical_timeout_logged(self):
+        self.s.add_shootout_attempt(True, False)
+        self.s.start_technical_timeout()
+        types = [(e["type"], e.get("side"), e.get("detail")) for e in self.s.match_log]
+        self.assertEqual(types, [("7m", "home", "miss"), ("technical_timeout", None, None)])
+
+    def test_delete_last(self):
+        self.s.log_event("goal", side="home")
+        self.s.log_event("goal", side="away")
+        self.s.log_delete_last()
+        self.assertEqual([e["side"] for e in self.s.match_log], ["home"])
+        while self.s.match_log:
+            self.s.log_delete_last()
+        self.s.log_delete_last()  # empty is a no-op
+
+    def test_reset_clears_log(self):
+        self.s.log_event("goal", side="home")
+        self.s.reset()
+        self.assertEqual(self.s.match_log, [])
+
+    def test_log_is_capped(self):
+        for i in range(ScoreboardState.MAX_LOG_ENTRIES + 25):
+            self.s.log_event("goal", side="home")
+        self.assertEqual(len(self.s.match_log), ScoreboardState.MAX_LOG_ENTRIES)
+        self.assertEqual(len(self.s.to_public_dict()["match_log"]),
+                         ScoreboardState.MAX_LOG_ENTRIES)
+
+    def test_legacy_blob_defaults_empty_log(self):
+        blob = json.dumps({"home_score": 3, "away_score": 1})
+
+        class FakeRedis:
+            def get(self, key):
+                return blob
+
+        original, state_mod.r = state_mod.r, FakeRedis()
+        try:
+            s = ScoreboardState.load()
+        finally:
+            state_mod.r = original
+        self.assertEqual(s.match_log, [])
+
+
 if __name__ == "__main__":
     unittest.main()

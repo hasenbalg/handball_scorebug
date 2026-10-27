@@ -60,8 +60,12 @@ def handle_update(data):
         state.away_score = int(data["away_score"])
     if "home_score_change" in data:
         state.home_score += int(data["home_score_change"])
+        if int(data["home_score_change"]) > 0:
+            state.log_event("goal", side="home")
     if "away_score_change" in data:
         state.away_score += int(data["away_score_change"])
+        if int(data["away_score_change"]) > 0:
+            state.log_event("goal", side="away")
 
     # Timer
     if "set_time" in data:
@@ -177,6 +181,10 @@ def handle_update(data):
     # Hide eg in pause
     if "hide_scorebug" in data:
         state.hide_scorebug = bool(data["hide_scorebug"])
+
+    # Match log maintenance (#5)
+    if data.get("log_delete_last"):
+        state.log_delete_last()
 
     # 7m shootout
     if data.get("shootout_start"):

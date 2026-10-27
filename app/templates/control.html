@@ -237,6 +237,13 @@
             <button onclick="sendUpdate({ shootout_away_miss: true })" class="so-input">Miss</button>
             <button onclick="sendUpdate({ shootout_undo_away: true })" class="so-input">Undo</button>
         </div>
+
+        <!-- MATCH LOG / EVENT TIMELINE (#5) -->
+        <div class="log-panel">
+            <h2>Match Log</h2>
+            <div id="match_log"></div>
+            <button onclick="sendUpdate({ log_delete_last: true })">Delete last entry</button>
+        </div>
     </div>
 
     <button class="save-button" onclick="saveState()">Save / Push Names & Scores (S)</button>

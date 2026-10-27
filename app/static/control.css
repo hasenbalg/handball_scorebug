@@ -240,3 +240,27 @@ td {
 .links a:visited {
     color: white;
 }
+/* Match log / event timeline (#5) */
+.log-panel {
+    margin-top: 16px;
+    border-top: 1px solid #333;
+    padding-top: 8px;
+}
+
+#match_log {
+    max-height: 260px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    background: #111;
+    border: 1px solid #333;
+    padding: 6px 8px;
+}
+
+#match_log .entry { white-space: nowrap; }
+#match_log .entry .clock { color: #7fdc7f; }
+#match_log .entry .period { color: #666; }
+#match_log .entry .home { color: #6ea8ff; }
+#match_log .entry .away { color: #ff8a8a; }
+#match_log .entry .neutral { color: #ff8c00; }

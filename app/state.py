@@ -76,6 +76,9 @@ class ScoreboardState:
 
     buzzer_played: bool = False
 
+    # Match log / event timeline (#5) — chronological, persisted with state
+    match_log: list = field(default_factory=list)
+
     def __post_init__(self):
         if self.home_suspensions is None:
             self.home_suspensions = []
@@ -112,6 +115,7 @@ class ScoreboardState:
         data.setdefault("overtime_enabled", False)
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
+        data.setdefault("match_log", [])
         data.setdefault("home_color", "#005eff")
         data.setdefault("away_color", "#ff3b3b")
 
@@ -162,6 +166,30 @@ class ScoreboardState:
         self.update_time()
         self.update_timeouts()
         r.set(REDIS_KEY, json.dumps(asdict(self)))
+
+    # ----- Match log (#5) -----
+
+    MAX_LOG_ENTRIES = 1000
+
+    def log_event(self, type_: str, side: str | None = None,
+                  player: str | None = None, detail: str | None = None):
+        """Append one event to the chronological match log."""
+        self.match_log.append({
+            "at": int(time.time()),
+            "clock": self.format_time(self.elapsed_seconds),
+            "period": self.period_name,
+            "type": type_,
+            "side": side,
+            "player": player,
+            "detail": detail,
+        })
+        if len(self.match_log) > self.MAX_LOG_ENTRIES:
+            del self.match_log[0]
+
+    def log_delete_last(self):
+        """Escape hatch for mis-clicked events."""
+        if self.match_log:
+            self.match_log.pop()
 
     # ----- Time -----
 
@@ -273,14 +301,18 @@ class ScoreboardState:
         self.buzzer_played = False   # reset for next period
         if defs[idx][2]:             # swap ends only where the rules say so
             self.side_change()
+        self.log_event("period", detail=self.period_name)
 
     def set_period_index(self, index: int):
         defs = self.period_definitions()
         index = max(0, min(len(defs) - 1, index))
+        changed = index != self.period_index
         self.stop_timer()
         self.period_index = index
         self.elapsed_seconds = 0
         self.buzzer_played = False
+        if changed:
+            self.log_event("period", detail=self.period_name)
 
     # ----- Suspensions -----
 
@@ -310,12 +342,18 @@ class ScoreboardState:
         self.home_suspensions.append(Suspension(key, duration))
         self._register_suspension(self.home_suspension_counts, self.home_disqualified, key)
         self._announcement_timeout()
+        self.log_event("suspension", side="home", player=key)
+        if self.home_suspension_counts.get(key) == 3:
+            self.log_event("disqualification", side="home", player=key)
 
     def add_suspension_away(self, player: str, duration: int = 120):
         key = _player_key(player)
         self.away_suspensions.append(Suspension(key, duration))
         self._register_suspension(self.away_suspension_counts, self.away_disqualified, key)
         self._announcement_timeout()
+        self.log_event("suspension", side="away", player=key)
+        if self.away_suspension_counts.get(key) == 3:
+            self.log_event("disqualification", side="away", player=key)
 
     def _announcement_timeout(self):
         """2:8a: mandatory clock stop for the suspension announcement."""
@@ -352,10 +390,16 @@ class ScoreboardState:
         self.away_cards = [c for c in self.away_cards if still_active(c)]
 
     def add_card_home(self, player: str, color: str = "yellow", duration: int = 10):
-        self.home_cards.append(Card(player, time.time(), duration, color))
+        key = _player_key(player)
+        color = color if color in ("yellow", "red") else "yellow"
+        self.home_cards.append(Card(key, time.time(), duration, color))
+        self.log_event("card", side="home", player=key, detail=color)
 
     def add_card_away(self, player: str, color: str = "yellow", duration: int = 10):
-        self.away_cards.append(Card(player, time.time(), duration, color))
+        key = _player_key(player)
+        color = color if color in ("yellow", "red") else "yellow"
+        self.away_cards.append(Card(key, time.time(), duration, color))
+        self.log_event("card", side="away", player=key, detail=color)
 
     def delete_card_home(self, index: int):
         if 0 <= index < len(self.home_cards):
@@ -370,16 +414,19 @@ class ScoreboardState:
     def start_timeout_home(self):
         self.home_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.stop_timer()
+        self.log_event("timeout", side="home")
 
     def start_timeout_away(self):
         self.away_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.stop_timer()
+        self.log_event("timeout", side="away")
 
     def start_technical_timeout(self):
         """2:8c-type interruption (injury, floor cleaning, referee decision):
         neutral time-out, game clock stopped, separate countdown (#6)."""
         self.technical_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.stop_timer()
+        self.log_event("technical_timeout")
 
     def update_timeouts(self):
         now = time.time()
@@ -417,6 +464,7 @@ class ScoreboardState:
         self.shootout_starting_team = "home"
         self.shootout_confirmed_winner = None
         self.hide_scorebug = False
+        self.match_log = []
 
     # ----- Shootout -----
 
@@ -437,6 +485,8 @@ class ScoreboardState:
             self.home_shootout.append(success)
         else:
             self.away_shootout.append(success)
+        self.log_event("7m", side="home" if is_home else "away",
+                       detail="goal" if success else "miss")
 
     def undo_shootout(self, is_home: bool):
         if self.shootout_confirmed_winner:
@@ -547,4 +597,5 @@ class ScoreboardState:
             "shootout_suggested_winner": self.suggested_shootout_winner(),
             "shootout_confirmed_winner": self.shootout_confirmed_winner,
             "shootout_next_team": self.next_shootout_team(),
+            "match_log": self.match_log,
         }

@@ -242,6 +242,18 @@
             <button onclick="sendUpdate({ shootout_undo_away: true })" class="so-input">Undo</button>
         </div>
 
+        <!-- PASSIVE PLAY (#3) -->
+        <div class="panel">
+            <h2>Passive Play (7:4)</h2>
+            <div class="passive-row">
+                <button id="btn_passive_home" onclick="sendUpdate({ passive_home: true })">⚠ Passive Home</button>
+                <button id="btn_passive_away" onclick="sendUpdate({ passive_away: true })">⚠ Passive Away</button>
+                <button id="btn_passive_pass" onclick="sendUpdate({ passive_pass: true })">Pass −1</button>
+                <button onclick="sendUpdate({ passive_clear: true })">Clear</button>
+            </div>
+            <span id="passive_status" class="timeout-status"></span>
+        </div>
+
         <!-- MATCH LOG / EVENT TIMELINE (#5) -->
         <div class="log-panel">
             <h2>Match Log</h2>

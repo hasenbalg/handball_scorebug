@@ -189,6 +189,16 @@ def handle_update(data):
     if data.get("log_delete_last"):
         state.log_delete_last()
 
+    # Passive play (#3)
+    if data.get("passive_home"):
+        state.set_passive("home")
+    if data.get("passive_away"):
+        state.set_passive("away")
+    if data.get("passive_pass"):
+        state.passive_pass()
+    if data.get("passive_clear"):
+        state.set_passive(None)
+
     # 7m shootout
     if data.get("shootout_start"):
         st = data["shootout_start"]

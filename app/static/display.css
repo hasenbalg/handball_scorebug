@@ -261,3 +261,18 @@
 }
 .to-dots .dot.filled { background: #e11; border-color: #e11; }
 .to-dots .dot.over { background: #ff8c00; border-color: #ff8c00; }
+
+/* Passive play indicator (#3) */
+.passive-indicator {
+    display: none;
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: #ffd400;
+    color: #1a1a1a;
+    font-size: 0.5em;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    border: 2px solid #1a1a1a;
+    white-space: nowrap;
+}
+.passive-indicator.expired { background: #e11; color: #fff; }

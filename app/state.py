@@ -90,6 +90,13 @@ class ScoreboardState:
     home_timeouts_taken: list = field(default_factory=list)
     away_timeouts_taken: list = field(default_factory=list)
 
+    # Passive play (#3, IHF 7:4 + Clarification 4): after the forewarning
+    # signal the attacking team may make at most 4 passes before it must
+    # shoot.
+    PASSIVE_MAX_PASSES = 4
+    passive_team: str | None = None
+    passive_passes: int | None = None
+
     def __post_init__(self):
         if self.home_suspensions is None:
             self.home_suspensions = []
@@ -127,6 +134,8 @@ class ScoreboardState:
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
         data.setdefault("match_log", [])
+        data.setdefault("passive_team", None)
+        data.setdefault("passive_passes", None)
         data.setdefault("home_goal_scorers", [])
         data.setdefault("away_goal_scorers", [])
         data.setdefault("home_timeouts_taken", [])
@@ -218,6 +227,7 @@ class ScoreboardState:
             self.home_score += 1
             self.home_goal_scorers.append(key)
         self.last_scorer = {"side": side, "player": key, "at": int(time.time())}
+        self.clear_passive()  # a shot ends the 7:4 phase
         self.log_event("goal", side=side, player=key)
 
     def undo_goal(self, side: str):
@@ -232,6 +242,39 @@ class ScoreboardState:
                 self.home_goal_scorers.pop()
         if self.last_scorer and self.last_scorer.get("side") == side:
             self.last_scorer = None
+        self.clear_passive()  # goal or correction: new situation, 7:4 reset
+
+    # ----- Passive play (#3) -----
+
+    def set_passive(self, team: str | None):
+        """Arm/disarm the forewarning indicator. Same team again = off
+        (signal lifted, e.g. after a clear attack phase or free throw)."""
+        if team not in ("home", "away") or team == self.passive_team:
+            if self.passive_team:
+                self.log_event("passive_off", side=self.passive_team)
+            self.passive_team = None
+            self.passive_passes = None
+            return
+        self.passive_team = team
+        self.passive_passes = self.PASSIVE_MAX_PASSES
+        self.log_event("passive_on", side=team)
+
+    def passive_pass(self):
+        """One completed pass by the flagged team (Clarification 4 count)."""
+        if self.passive_team is None or self.passive_passes is None:
+            return
+        if self.passive_passes == 0:
+            return  # already expired; whistle is the operator's call
+        self.passive_passes -= 1
+        if self.passive_passes == 0:
+            self.log_event("passive_expired", side=self.passive_team)
+
+    def clear_passive(self):
+        """Any goal, clock stoppage or period change ends the phase."""
+        if self.passive_team:
+            self.log_event("passive_off", side=self.passive_team)
+        self.passive_team = None
+        self.passive_passes = None
 
     # ----- Time -----
 
@@ -352,6 +395,7 @@ class ScoreboardState:
         running clock, a second whistle resumes play."""
         if self.running:
             self.stop_timer()
+            self.clear_passive()  # whistle = stoppage, 7:4 phase over
         else:
             self.start_timer()
 
@@ -365,6 +409,7 @@ class ScoreboardState:
         self.buzzer_played = False   # reset for next period
         if defs[idx][2]:             # swap ends only where the rules say so
             self.side_change()
+        self.clear_passive()
         self.log_event("period", detail=self.period_name)
 
     def set_period_index(self, index: int):
@@ -375,6 +420,7 @@ class ScoreboardState:
         self.period_index = index
         self.elapsed_seconds = 0
         self.buzzer_played = False
+        self.clear_passive()
         if changed:
             self.log_event("period", detail=self.period_name)
 
@@ -405,6 +451,7 @@ class ScoreboardState:
         key = _player_key(player)
         self.home_suspensions.append(Suspension(key, duration))
         self._register_suspension(self.home_suspension_counts, self.home_disqualified, key)
+        self.clear_passive()
         self._announcement_timeout()
         self.log_event("suspension", side="home", player=key)
         if self.home_suspension_counts.get(key) == 3:
@@ -414,6 +461,7 @@ class ScoreboardState:
         key = _player_key(player)
         self.away_suspensions.append(Suspension(key, duration))
         self._register_suspension(self.away_suspension_counts, self.away_disqualified, key)
+        self.clear_passive()
         self._announcement_timeout()
         self.log_event("suspension", side="away", player=key)
         if self.away_suspension_counts.get(key) == 3:
@@ -479,12 +527,14 @@ class ScoreboardState:
         self.home_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.home_timeouts_taken.append(self._period_slot())
         self.stop_timer()
+        self.clear_passive()
         self.log_event("timeout", side="home")
 
     def start_timeout_away(self):
         self.away_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.away_timeouts_taken.append(self._period_slot())
         self.stop_timer()
+        self.clear_passive()
         self.log_event("timeout", side="away")
 
     def start_technical_timeout(self):
@@ -492,6 +542,7 @@ class ScoreboardState:
         neutral time-out, game clock stopped, separate countdown (#6)."""
         self.technical_timeout_end = time.time() + self.TIMEOUT_DURATION
         self.stop_timer()
+        self.clear_passive()
         self.log_event("technical_timeout")
 
     def update_timeouts(self):
@@ -531,6 +582,8 @@ class ScoreboardState:
         self.shootout_confirmed_winner = None
         self.hide_scorebug = False
         self.match_log = []
+        self.passive_team = None
+        self.passive_passes = None
         self.home_goal_scorers = []
         self.away_goal_scorers = []
         self.last_scorer = None
@@ -669,6 +722,9 @@ class ScoreboardState:
             "shootout_confirmed_winner": self.shootout_confirmed_winner,
             "shootout_next_team": self.next_shootout_team(),
             "match_log": self.match_log,
+            "passive_team": self.passive_team,
+            "passive_passes": self.passive_passes,
+            "passive_expired": self.passive_team is not None and self.passive_passes == 0,
             "home_goal_scorers": self.home_goal_scorers,
             "away_goal_scorers": self.away_goal_scorers,
             "last_scorer": self.last_scorer,

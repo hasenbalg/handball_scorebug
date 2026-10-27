@@ -565,8 +565,6 @@ class ScorerTest(unittest.TestCase):
         self.assertIsNone(self.s.last_scorer)
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TimeoutQuotaTest(unittest.TestCase):
@@ -613,3 +611,70 @@ class TimeoutQuotaTest(unittest.TestCase):
         self.s.start_timeout_home()
         self.s.reset()
         self.assertEqual(self.s.home_timeouts_taken, [])
+
+
+class PassivePlayTest(unittest.TestCase):
+    """#3: forewarning signal + 4-pass limit (7:4, Clarification 4)."""
+
+    def setUp(self):
+        self.s = ScoreboardState()
+
+    def test_arm_and_count(self):
+        self.s.set_passive("home")
+        self.assertEqual((self.s.passive_team, self.s.passive_passes), ("home", 4))
+        for expected in (3, 2, 1, 0):
+            self.s.passive_pass()
+            self.assertEqual(self.s.passive_passes, expected)
+        self.s.passive_pass()  # stays at 0
+        self.assertEqual(self.s.passive_passes, 0)
+        types = [e["type"] for e in self.s.match_log]
+        self.assertEqual(types, ["passive_on", "passive_expired"])
+
+    def test_expired_exposed(self):
+        self.s.set_passive("away")
+        for _ in range(4):
+            self.s.passive_pass()
+        d = self.s.to_public_dict()
+        self.assertEqual((d["passive_team"], d["passive_expired"]), ("away", True))
+        self.assertFalse(self.s.to_public_dict()["home_timeout_active"])
+
+    def test_same_team_toggles_off(self):
+        self.s.set_passive("home")
+        self.s.set_passive("home")
+        self.assertIsNone(self.s.passive_team)
+
+    def test_other_team_reassigns(self):
+        self.s.set_passive("home")
+        self.s.set_passive("away")
+        self.assertEqual(self.s.passive_team, "away")
+
+    def test_pass_without_signal_noop(self):
+        self.s.passive_pass()
+        self.assertIsNone(self.s.passive_team)
+        self.assertEqual(self.s.match_log, [])
+
+    def test_cleared_by_goal_whistle_timeout_period(self):
+        for action in (
+            lambda: self.s.goal("away"),
+            lambda: (self.s.start_timer(), self.s.referee_whistle()),
+            lambda: self.s.start_technical_timeout(),
+            lambda: self.s.next_period(),
+        ):
+            self.s.set_passive("home")
+            action()
+            self.assertIsNone(self.s.passive_team)
+
+    def test_cleared_by_suspension(self):
+        self.s.set_passive("home")
+        self.s.add_suspension_away("5")
+        self.assertIsNone(self.s.passive_team)
+
+    def test_reset_clears(self):
+        self.s.set_passive("home")
+        self.s.reset()
+        self.assertIsNone(self.s.passive_team)
+        self.assertIsNone(self.s.passive_passes)
+
+
+if __name__ == "__main__":
+    unittest.main()

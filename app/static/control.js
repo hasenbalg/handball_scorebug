@@ -139,6 +139,21 @@ socket.on("state_update", (state) => {
             ? `Active – ${formatTime(state.technical_timeout_remaining)}`
             : '';
     }
+
+    // Team time-out quota (#1): 3 per match, 2 per half, none in OT
+    for (const side of ["home", "away"]) {
+        const el = document.getElementById(side + "_timeout_status");
+        if (!el || !state[side + "_timeouts"]) continue;
+        const q = state[side + "_timeouts"];
+        let text = el.textContent.replace(/\s*\| *TO \d\/\d.*$/, "");
+        if (q.total) {
+            text += ` | TO ${q.total}/${q.max}`;
+            if (q.over_total) text += " ⚠ over quota";
+            else if (q.over_half) text += " ⚠ 2 per half max";
+            if (q.ot_used) text += " ⚠ no TO in OT";
+        }
+        el.textContent = text;
+    }
 });
 
 function sendUpdate(payload) {

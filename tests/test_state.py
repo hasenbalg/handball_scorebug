@@ -567,3 +567,49 @@ class ScorerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TimeoutQuotaTest(unittest.TestCase):
+    """#1: 2:4 Comment — 3 TOs per match, max 2 per half, none in OT."""
+
+    def setUp(self):
+        self.s = ScoreboardState()
+
+    def test_timeouts_record_period_slot(self):
+        self.s.start_timeout_home()                      # 1st Half
+        self.s.next_period()
+        self.s.start_timeout_home()                      # 2nd Half
+        self.s.start_timeout_home()                      # 2nd Half again
+        self.assertEqual(self.s.home_timeouts_taken, ["half1", "half2", "half2"])
+        q = self.s.to_public_dict()["home_timeouts"]
+        self.assertEqual((q["total"], q["half1"], q["half2"]), (3, 1, 2))
+        self.assertFalse(q["over_total"])
+        self.assertFalse(q["over_half"])
+
+    def test_over_quota_flags(self):
+        for _ in range(3):
+            self.s.start_timeout_home()
+        self.s.start_timeout_home()  # 4th: allowed but flagged
+        self.assertEqual(self.s.home_score, 0)
+        self.assertTrue(self.s._timeout_quota(self.s.home_timeouts_taken)["over_total"])
+
+    def test_two_in_first_half_flags_half_quota(self):
+        self.s.start_timeout_away()
+        self.s.start_timeout_away()
+        self.assertFalse(self.s._timeout_quota(self.s.away_timeouts_taken)["over_half"])
+        self.s.start_timeout_away()
+        self.assertTrue(self.s._timeout_quota(self.s.away_timeouts_taken)["over_half"])
+
+    def test_ot_flag(self):
+        self.s.set_match_configuration(overtime_enabled=True)
+        for _ in range(4):
+            self.s.next_period()  # 2nd Half -> OT1 1st Half (index 3 from 1st)
+        self.s.start_timeout_home()
+        q = self.s._timeout_quota(self.s.home_timeouts_taken)
+        self.assertEqual(self.s._period_slot(), "ot")
+        self.assertTrue(q["ot_used"])
+
+    def test_reset_clears_taken(self):
+        self.s.start_timeout_home()
+        self.s.reset()
+        self.assertEqual(self.s.home_timeouts_taken, [])

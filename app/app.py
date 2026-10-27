@@ -189,6 +189,9 @@ def handle_update(data):
     if data.get("log_delete_last"):
         state.log_delete_last()
 
+    if data.get("skip_break"):
+        state.skip_break()
+
     # Passive play (#3)
     if data.get("passive_home"):
         state.set_passive("home")

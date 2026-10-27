@@ -477,11 +477,14 @@ class MatchLogTest(unittest.TestCase):
 
     def test_period_changes_logged_only_on_change(self):
         self.s.next_period()
-        self.assertEqual(self.s.match_log[-1]["type"], "period")
+        types = [e["type"] for e in self.s.match_log]
+        self.assertEqual(types, ["period", "break_start"])  # #7: + half-time break
+        self.assertEqual(self.s.match_log[0]["detail"], "2nd Half")
         self.s.match_log.clear()
         self.s.set_period_index(self.s.period_index)  # no-op clamp
         self.assertEqual(self.s.match_log, [])
         self.s.set_period_index(0)
+        self.assertEqual([e["type"] for e in self.s.match_log], ["period"])
         self.assertEqual(self.s.match_log[-1]["detail"], "1st Half")
 
     def test_shootout_and_technical_timeout_logged(self):
@@ -678,3 +681,61 @@ class PassivePlayTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BreakTimerTest(unittest.TestCase):
+    """#7: 10-min half-time, 5 min before OT periods, 1 min OT halves."""
+
+    def setUp(self):
+        self.s = ScoreboardState()
+
+    def test_half_time_break_starts_on_next_period(self):
+        self.s.next_period()  # 1st -> 2nd Half
+        d = self.s.to_public_dict()
+        self.assertTrue(d["break_active"])
+        self.assertIn(d["break_remaining"], range(598, 601))
+
+    def test_no_break_into_first_half(self):
+        self.s.set_period_index(0)
+        self.assertFalse(self.s.to_public_dict()["break_active"])
+
+    def test_overtime_break_chain(self):
+        s = ScoreboardState()
+        s.set_match_configuration(overtime_enabled=True)
+        breaks = [d[3] for d in s.period_definitions()]
+        self.assertEqual(breaks, [0, 600, 300, 60, 300, 60, 0])
+
+    def test_skip_break(self):
+        self.s.next_period()
+        self.s.skip_break()
+        self.assertFalse(self.s.to_public_dict()["break_active"])
+
+    def test_break_expires(self):
+        self.s.next_period()
+        self.s.break_end = time.time() - 1
+        self.s.update_timeouts()
+        self.assertIsNone(self.s.break_end)
+
+    def test_reset_clears_break(self):
+        self.s.next_period()
+        self.s.reset()
+        self.assertIsNone(self.s.break_end)
+
+    def test_break_logged(self):
+        self.s.next_period()
+        types = [e["type"] for e in self.s.match_log]
+        self.assertEqual(types, ["period", "break_start"])
+
+    def test_legacy_blob_defaults_no_break(self):
+        blob = json.dumps({"home_score": 2})
+
+        class FakeRedis:
+            def get(self, key):
+                return blob
+
+        original, state_mod.r = state_mod.r, FakeRedis()
+        try:
+            s = ScoreboardState.load()
+        finally:
+            state_mod.r = original
+        self.assertIsNone(s.break_end)

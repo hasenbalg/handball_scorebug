@@ -361,6 +361,7 @@ function logEntryLabel(e) {
         case "technical_timeout": return "TECH TIMEOUT";
         case "period": return "→ " + (e.detail || "");
         case "7m": return e.detail === "goal" ? "7m GOAL" : "7m MISS";
+        case "break_start": return "BREAK — " + (e.detail || "");
         case "passive_on": return "PASSIVE SIGNAL";
         case "passive_off": return "passive off";
         case "passive_expired": return "PASSIVE EXPIRED";
@@ -408,6 +409,22 @@ function renderPassive(state) {
 }
 
 socket.on("state_update", renderPassive);
+
+// -----------------------------
+// Break timer (#7)
+// -----------------------------
+socket.on("state_update", (state) => {
+    const st = document.getElementById("break_status");
+    const btn = document.getElementById("btn_skip_break");
+    if (!st || !btn) return;
+    if (state.break_active) {
+        st.textContent = `Break: ${formatTime(state.break_remaining)}`;
+        btn.style.display = "";
+    } else {
+        st.textContent = "";
+        btn.style.display = "none";
+    }
+});
 
 // -----------------------------
 // Referee whistle / clock rules (#11)

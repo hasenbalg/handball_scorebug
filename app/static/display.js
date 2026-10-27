@@ -250,6 +250,17 @@ socket.on("state_update", (state) => {
         }
     }
 
+    // Break timer (#7)
+    const brk = document.getElementById("break_indicator");
+    if (brk) {
+        if (state.break_active) {
+            brk.textContent = `BREAK ${formatTime(state.break_remaining)}`;
+            brk.style.display = "block";
+        } else {
+            brk.style.display = "none";
+        }
+    }
+
     // Team time-out dots (#1): one filled red dot per taken TO, 3 allowed
     for (const side of ["home", "away"]) {
         const el = document.getElementById(side + "_to_dots");

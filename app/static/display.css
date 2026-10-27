@@ -276,3 +276,18 @@
     white-space: nowrap;
 }
 .passive-indicator.expired { background: #e11; color: #fff; }
+
+/* Break timer (#7) */
+.break-indicator {
+    display: none;
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: #4a4a4a;
+    color: #fff;
+    font-size: 0.5em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border: 2px solid #1a1a1a;
+    text-align: center;
+    white-space: nowrap;
+}

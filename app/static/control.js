@@ -282,3 +282,38 @@ document.getElementById("time").addEventListener("keydown", (e) => {
         e.target.blur();
     }
 });
+
+// -----------------------------
+// 7m shootout protocol status (#15)
+// -----------------------------
+function startShootout() {
+    const t = document.getElementById("shootout_start_team").value;
+    sendUpdate({ shootout_start: { starting_team: t } });
+}
+
+function renderShootoutStatus(state) {
+    const box = document.getElementById("shootout_status");
+    if (!box) return;
+    const label = t => (t === "home" ? state.home_team : state.away_team);
+
+    let html = "";
+    if (state.shootout_active) {
+        if (state.shootout_confirmed_winner) {
+            html = `🏆 ${label(state.shootout_confirmed_winner)} wins — input locked ` +
+                `<button onclick="sendUpdate({ shootout_unconfirm: true })">Un-confirm</button>`;
+        } else if (state.shootout_suggested_winner) {
+            const w = state.shootout_suggested_winner;
+            html = `Rules force a win for <b>${label(w)}</b>. ` +
+                `<button onclick="sendUpdate({ shootout_confirm: { team: '${w}' } })">Confirm winner</button>`;
+        } else {
+            html = `Next throw: <b>${label(state.shootout_next_team)}</b>`;
+        }
+    }
+    box.innerHTML = html;
+
+    // Confirmed result: disable attempt/undo input until un-confirm
+    document.querySelectorAll(".so-input").forEach(
+        b => { b.disabled = !!state.shootout_confirmed_winner; });
+}
+
+socket.on("state_update", renderShootoutStatus);

@@ -217,6 +217,18 @@ socket.on("state_update", (state) => {
         awayLane.style.display = "flex";
         renderShootout(homeLane, state.home_shootout);
         renderShootout(awayLane, state.away_shootout);
+
+        // Confirmed winner: banner in the winning team's lane, dots stay
+        const winner = state.shootout_confirmed_winner;
+        if (winner) {
+            const goals = arr => (arr || []).reduce((a, b) => a + (b ? 1 : 0), 0);
+            const banner = document.createElement("div");
+            banner.className = "shootout-winner";
+            const name = winner === "home" ? state.home_team : state.away_team;
+            banner.textContent =
+                `${name.toUpperCase()} WINS ${goals(state.home_shootout)}–${goals(state.away_shootout)} AFTER 7m`;
+            (winner === "home" ? homeLane : awayLane).appendChild(banner);
+        }
     } else {
         homeLane.style.display = "none";
         awayLane.style.display = "none";

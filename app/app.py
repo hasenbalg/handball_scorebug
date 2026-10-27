@@ -165,10 +165,20 @@ def handle_update(data):
 
     # 7m shootout
     if data.get("shootout_start"):
-        state.start_shootout()
+        st = data["shootout_start"]
+        starting = st.get("starting_team", "home") if isinstance(st, dict) else "home"
+        state.start_shootout(starting)
 
     if data.get("shootout_stop"):
         state.stop_shootout()
+
+    if data.get("shootout_confirm"):
+        st = data["shootout_confirm"]
+        team = st.get("team") if isinstance(st, dict) else None
+        state.confirm_shootout_winner(team)
+
+    if data.get("shootout_unconfirm"):
+        state.unconfirm_shootout_winner()
 
     if "shootout_home_goal" in data:
         state.add_shootout_attempt(True, True)

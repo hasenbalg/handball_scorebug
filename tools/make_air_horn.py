@@ -1,3 +1,11 @@
+"""One-shot asset generator: recreates app/static/air_horn.wav (buzzer sound).
+
+Dev-only tooling — needs numpy, scipy and sounddevice (NOT runtime deps, see
+requirements.txt). Run from this directory, then copy the resulting
+air_horn.wav to app/static/.
+
+(Formerly repo-root signal.py, which shadowed the stdlib `signal` module — #18.)
+"""
 import numpy as np
 from scipy.io.wavfile import write
 import sounddevice as sd

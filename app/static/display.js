@@ -185,6 +185,12 @@ socket.on("state_update", (state) => {
     setText("home_team", hName && state.home_players_on_court < 7 ? `${hName} ·${state.home_players_on_court}` : hName);
     const aName = state.away_display_name || "";
     setText("away_team", aName && state.away_players_on_court < 7 ? `${aName} ·${state.away_players_on_court}` : aName);
+
+    // #34: an empty display name hides the label entirely
+    document.getElementById("home_team").style.visibility =
+        hName ? "visible" : "hidden";
+    document.getElementById("away_team").style.visibility =
+        aName ? "visible" : "hidden";
     setText("home_score", state.home_score);
     setText("away_score", state.away_score);
     setText("period", state.period_name);

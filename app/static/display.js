@@ -181,8 +181,10 @@ socket.on("state_update", (state) => {
         .classList.toggle("hidden", state.hide_scorebug);
 
     // Basic fields
-    setText("home_team", state.home_team + (state.home_players_on_court < 7 ? ` ·${state.home_players_on_court}` : ""));
-    setText("away_team", state.away_team + (state.away_players_on_court < 7 ? ` ·${state.away_players_on_court}` : ""));
+    const hName = state.home_display_name || "";
+    setText("home_team", hName && state.home_players_on_court < 7 ? `${hName} ·${state.home_players_on_court}` : hName);
+    const aName = state.away_display_name || "";
+    setText("away_team", aName && state.away_players_on_court < 7 ? `${aName} ·${state.away_players_on_court}` : aName);
     setText("home_score", state.home_score);
     setText("away_score", state.away_score);
     setText("period", state.period_name);

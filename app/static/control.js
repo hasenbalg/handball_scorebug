@@ -329,6 +329,42 @@ function renderShootoutStatus(state) {
 socket.on("state_update", renderShootoutStatus);
 
 // -----------------------------
+// Match log / event timeline (#5)
+// -----------------------------
+function logEntryLabel(e) {
+    switch (e.type) {
+        case "goal": return "GOAL";
+        case "suspension": return "2min";
+        case "disqualification": return "DQ";
+        case "card": return e.detail === "red" ? "RED" : "YELLOW";
+        case "timeout": return "TIMEOUT";
+        case "technical_timeout": return "TECH TIMEOUT";
+        case "period": return "→ " + (e.detail || "");
+        case "7m": return e.detail === "goal" ? "7m GOAL" : "7m MISS";
+        default: return e.type.toUpperCase();
+    }
+}
+
+function renderMatchLog(state) {
+    const el = document.getElementById("match_log");
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 30;
+    el.innerHTML = (state.match_log || []).map(e => {
+        const sideClass = e.side || "neutral";
+        const sideText = e.side ? e.side.toUpperCase() : "";
+        const player = e.player ? ` #${e.player}` : "";
+        return `<div class="entry">` +
+            `<span class="clock">${e.clock}</span> ` +
+            `<span class="period">${e.period}</span> ` +
+            `<span class="${sideClass}">${sideText}${player} ${logEntryLabel(e)}</span>` +
+            `</div>`;
+    }).join("");
+    if (atBottom) el.scrollTop = el.scrollHeight;
+}
+
+socket.on("state_update", renderMatchLog);
+
+// -----------------------------
 // Referee whistle / clock rules (#11)
 // -----------------------------
 document.addEventListener("keydown", (e) => {

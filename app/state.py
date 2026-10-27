@@ -379,6 +379,16 @@ class ScoreboardState:
         return self.format_time(self.elapsed_seconds)
 
     @staticmethod
+    def short_name(name) -> str:
+        """Overlay abbreviation (#34): first word, max 3 letters, upper-
+        cased. An empty team name yields an empty string = label hidden
+        (names are optional on the display)."""
+        words = str(name or "").split()
+        if not words:
+            return ""
+        return words[0].upper()[:3]
+
+    @staticmethod
     def format_time(seconds: int) -> str:
         m = seconds // 60
         s = seconds % 60
@@ -708,6 +718,8 @@ class ScoreboardState:
         return {
             "home_team": self.home_team,
             "away_team": self.away_team,
+            "home_display_name": self.short_name(self.home_team),
+            "away_display_name": self.short_name(self.away_team),
             "home_score": self.home_score,
             "away_score": self.away_score,
             "period_index": self.period_index,

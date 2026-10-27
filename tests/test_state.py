@@ -807,3 +807,28 @@ class ExportReportTest(unittest.TestCase):
         self.assertIn("Goals per player", csv_text)
         self.assertIn("Timeline", csv_text)
         self.assertIn("goal", csv_text)
+
+
+class ShortNameTest(unittest.TestCase):
+    """#34: display names never longer than 3 letters, optional."""
+
+    def test_abbreviations(self):
+        sn = ScoreboardState.short_name
+        self.assertEqual(sn("Füchse Berlin"), "FÜC")
+        self.assertEqual(sn("SG Flensburg"), "SG")
+        self.assertEqual(sn("  eagles  "), "EAG")
+        self.assertEqual(sn("A"), "A")
+
+    def test_optional(self):
+        sn = ScoreboardState.short_name
+        self.assertEqual(sn(""), "")
+        self.assertEqual(sn(None), "")
+        self.assertEqual(sn("   "), "")
+
+    def test_public_dict(self):
+        s = ScoreboardState()
+        s.home_team, s.away_team = "Füchse Berlin", ""
+        d = s.to_public_dict()
+        self.assertEqual(d["home_display_name"], "FÜC")
+        self.assertEqual(d["away_display_name"], "")
+        self.assertEqual(d["home_team"], "Füchse Berlin")  # control keeps full name

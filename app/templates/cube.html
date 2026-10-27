@@ -16,7 +16,7 @@
             <!-- HOME TEAM BLOCK -->
             <div class="team-block home">
                 <div class="team-info">
-                    <div class="team-name" id="home_team">{{ game_state.home_team }}</div>
+                    <div class="team-name" id="home_team">{{ game_state.home_display_name }}</div>
                     <div class="cards home-cards penalties home-penalties" id="home_badges"></div>
                     <div class="timeout-indicator" id="home_timeout"></div>
 
@@ -36,7 +36,7 @@
             <!-- AWAY TEAM BLOCK -->
             <div class="team-block away">
                 <div class="team-info">
-                    <div class="team-name" id="away_team">{{ game_state.away_team }}</div>
+                    <div class="team-name" id="away_team">{{ game_state.away_display_name }}</div>
 
                     <div class="penalties away-penalties" id="away_badges"></div>
                     <div class="timeout-indicator" id="away_timeout"></div>

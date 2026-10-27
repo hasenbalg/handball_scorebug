@@ -68,13 +68,34 @@
             </table>
         </div>
 
+        <div class="control-section">
+            <h2>Match configuration</h2>
+            <label>Match type:
+                <select id="cfg_match_type" onchange="sendUpdate({ match_config: { match_type: this.value } })">
+                    <option value="league">League</option>
+                    <option value="cup">Cup</option>
+                    <option value="friendly">Friendly</option>
+                </select>
+            </label>
+            <label>Half length:
+                <select id="cfg_half_minutes" onchange="sendUpdate({ match_config: { half_minutes: parseInt(this.value) } })">
+                    <option value="30">2 × 30 min (age 16+)</option>
+                    <option value="25">2 × 25 min (u16)</option>
+                    <option value="20">2 × 20 min (u12)</option>
+                </select>
+            </label>
+            <label>
+                <input id="cfg_overtime" type="checkbox"
+                       onchange="sendUpdate({ match_config: { overtime_enabled: this.checked } })">
+                Overtime enabled (knockout, 2:2)
+            </label>
+        </div>
+
         <!-- Period -->
         <div class="control-section">
             <h2>Period</h2>
             <div id="period_list" class="period-list">
-                <div class="period-item" data-index="0" onclick="selectPeriod(0)">1st Half</div>
-                <div class="period-item" data-index="1" onclick="selectPeriod(1)">2nd Half</div>
-                <div class="period-item" data-index="2" onclick="selectPeriod(2)">60 Min</div>
+                <!-- rendered by control.js from state.period_names (#10) -->
             </div>
             <button onclick="sendUpdate({next_period: true})">Next Period (P)</button>
             <hr>

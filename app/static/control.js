@@ -348,3 +348,42 @@ function renderClockRulesStatus(state) {
     }
 }
 socket.on("state_update", renderClockRulesStatus);
+
+// -----------------------------
+// Match configuration (#10)
+// -----------------------------
+let _lastPeriodNames = null;
+
+function renderMatchConfig(state) {
+    // Period list follows the configuration (halves length + overtime)
+    const names = state.period_names || [];
+    if (JSON.stringify(names) !== JSON.stringify(_lastPeriodNames)) {
+        _lastPeriodNames = names;
+        const list = document.getElementById("period_list");
+        list.innerHTML = "";
+        names.forEach((name, i) => {
+            const el = document.createElement("div");
+            el.className = "period-item";
+            el.dataset.index = i;
+            el.textContent = name;
+            el.onclick = () => selectPeriod(i);
+            if (i === state.period_index) el.classList.add("active");
+            list.appendChild(el);
+        });
+    } else {
+        document.querySelectorAll(".period-item").forEach((el) => {
+            el.classList.toggle("active", parseInt(el.dataset.index) === state.period_index);
+        });
+    }
+
+    // Config controls (skip focused element to keep the picker usable)
+    const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = v;
+    };
+    setVal("cfg_match_type", state.match_type);
+    setVal("cfg_half_minutes", String(state.half_minutes));
+    const ot = document.getElementById("cfg_overtime");
+    if (ot && document.activeElement !== ot) ot.checked = !!state.overtime_enabled;
+}
+socket.on("state_update", renderMatchConfig);

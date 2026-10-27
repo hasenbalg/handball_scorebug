@@ -76,6 +76,9 @@ class ScoreboardState:
 
     buzzer_played: bool = False
 
+    # Break timer (#7): wall-clock end of the current intermission
+    break_end: float | None = None
+
     # Match log / event timeline (#5) — chronological, persisted with state
     match_log: list = field(default_factory=list)
 
@@ -134,6 +137,7 @@ class ScoreboardState:
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
         data.setdefault("match_log", [])
+        data.setdefault("break_end", None)
         data.setdefault("passive_team", None)
         data.setdefault("passive_passes", None)
         data.setdefault("home_goal_scorers", [])
@@ -278,18 +282,21 @@ class ScoreboardState:
 
     # ----- Time -----
 
-    def period_definitions(self) -> list[tuple[str, int, bool]]:
-        """(name, cap_seconds, swap_ends_on_entry) for the current config."""
+    def period_definitions(self) -> list[tuple[str, int, bool, int]]:
+        """(name, cap_seconds, swap_ends_on_entry, break_before_seconds)
+        for the current config (#7). Break durations per 2:2/2:3:
+        10-min half-time, 5 min before each overtime period, 1 min
+        between the halves of an overtime period."""
         hm = self.half_minutes if self.half_minutes in (20, 25, 30) else 30
-        defs = [("1st Half", hm * 60, False), ("2nd Half", hm * 60, True)]
+        defs = [("1st Half", hm * 60, False, 0), ("2nd Half", hm * 60, True, 10 * 60)]
         if self.overtime_enabled:
             defs += [
-                ("OT1 1st Half", 5 * 60, False),   # new coin toss: no auto-swap
-                ("OT1 2nd Half", 5 * 60, True),    # half-time of the OT period
-                ("OT2 1st Half", 5 * 60, False),   # new coin toss again
-                ("OT2 2nd Half", 5 * 60, True),
+                ("OT1 1st Half", 5 * 60, False, 5 * 60),   # new coin toss: no auto-swap
+                ("OT1 2nd Half", 5 * 60, True, 60),
+                ("OT2 1st Half", 5 * 60, False, 5 * 60),   # new coin toss again
+                ("OT2 2nd Half", 5 * 60, True, 60),
             ]
-        defs.append(("60 Min", 60 * 60, False))
+        defs.append(("60 Min", 60 * 60, False, 0))
         return defs
 
     def set_match_configuration(self, match_type=None, half_minutes=None,
@@ -411,6 +418,9 @@ class ScoreboardState:
             self.side_change()
         self.clear_passive()
         self.log_event("period", detail=self.period_name)
+        if defs[idx][3] > 0:         # #7: start the prescribed break
+            self.break_end = time.time() + defs[idx][3]
+            self.log_event("break_start", detail=f"{defs[idx][3] // 60} min before {defs[idx][0]}")
 
     def set_period_index(self, index: int):
         defs = self.period_definitions()
@@ -423,6 +433,9 @@ class ScoreboardState:
         self.clear_passive()
         if changed:
             self.log_event("period", detail=self.period_name)
+            if defs[index][3] > 0:
+                self.break_end = time.time() + defs[index][3]
+                self.log_event("break_start", detail=f"{defs[index][3] // 60} min before {defs[index][0]}")
 
     # ----- Suspensions -----
 
@@ -545,6 +558,10 @@ class ScoreboardState:
         self.clear_passive()
         self.log_event("technical_timeout")
 
+    def skip_break(self):
+        """Operator ends the intermission early (teams are ready)."""
+        self.break_end = None
+
     def update_timeouts(self):
         now = time.time()
         if self.home_timeout_end and now >= self.home_timeout_end:
@@ -553,6 +570,8 @@ class ScoreboardState:
             self.away_timeout_end = None
         if self.technical_timeout_end and now >= self.technical_timeout_end:
             self.technical_timeout_end = None
+        if self.break_end and now >= self.break_end:
+            self.break_end = None
 
     # ----- Reset -----
 
@@ -584,6 +603,7 @@ class ScoreboardState:
         self.match_log = []
         self.passive_team = None
         self.passive_passes = None
+        self.break_end = None
         self.home_goal_scorers = []
         self.away_goal_scorers = []
         self.last_scorer = None
@@ -722,6 +742,8 @@ class ScoreboardState:
             "shootout_confirmed_winner": self.shootout_confirmed_winner,
             "shootout_next_team": self.next_shootout_team(),
             "match_log": self.match_log,
+            "break_active": self.break_end is not None,
+            "break_remaining": max(0, int(self.break_end - time.time())) if self.break_end else 0,
             "passive_team": self.passive_team,
             "passive_passes": self.passive_passes,
             "passive_expired": self.passive_team is not None and self.passive_passes == 0,

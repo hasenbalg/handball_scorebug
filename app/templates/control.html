@@ -102,6 +102,8 @@
                 <!-- rendered by control.js from state.period_names (#10) -->
             </div>
             <button onclick="sendUpdate({next_period: true})">Next Period (P)</button>
+            <span id="break_status" class="timeout-status"></span>
+            <button id="btn_skip_break" onclick="sendUpdate({ skip_break: true })" style="display:none">End Break Now</button>
             <hr>
             <button onclick="sendUpdate({side_change: true})">Side Change (C)</button>
 

@@ -31,6 +31,12 @@ socket.on("state_update", (state) => {
         }
     });
 
+    // Sync "2nd Half continues from 30:00" option
+    const shaCheckbox = document.getElementById("second_half_absolute");
+    if (shaCheckbox && document.activeElement !== shaCheckbox) {
+        shaCheckbox.checked = !!state.second_half_absolute;
+    }
+
     // Suspensions
     const homeList = document.getElementById("susp_list_home");
     const awayList = document.getElementById("susp_list_away");

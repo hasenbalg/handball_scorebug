@@ -29,6 +29,9 @@ class ScoreboardState:
     running: bool = False
     start_time: float | None = None
 
+    # When True, the 2nd half clock continues from 30:00 instead of 00:00
+    second_half_absolute: bool = False
+
     # Colors
     home_color: str = "#005eff"
     away_color: str = "#ff3b3b"
@@ -136,6 +139,13 @@ class ScoreboardState:
     def period_name(self) -> str:
         return PERIODS[self.period_index][0]
 
+    @property
+    def display_offset_seconds(self) -> int:
+        """Seconds added to the displayed clock (2nd half continues from 30:00 when enabled)."""
+        if self.second_half_absolute and self.period_index == 1:
+            return PERIODS[0][1]
+        return 0
+
     def update_time(self):
         if self.running and self.start_time is not None:
             now = time.time()
@@ -159,7 +169,7 @@ class ScoreboardState:
 
     def compute_time(self):
         self.update_time()
-        return self.format_time(self.elapsed_seconds)
+        return self.format_time(self.elapsed_seconds + self.display_offset_seconds)
 
     @staticmethod
     def format_time(seconds: int) -> str:
@@ -170,7 +180,8 @@ class ScoreboardState:
     def set_time(self, timestr: str):
         try:
             m, s = timestr.split(":")
-            self.elapsed_seconds = int(m) * 60 + int(s)
+            shown = int(m) * 60 + int(s)
+            self.elapsed_seconds = max(0, shown - self.display_offset_seconds)
         except Exception:
             return
         self.running = False
@@ -359,6 +370,7 @@ class ScoreboardState:
             "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time())) if self.home_timeout_end else 0,
             "away_timeout_remaining": max(0, int(self.away_timeout_end - time.time())) if self.away_timeout_end else 0,
             "hide_scorebug": self.hide_scorebug,
+            "second_half_absolute": self.second_half_absolute,
             "shootout_active": self.shootout_active,
             "home_shootout": self.home_shootout,
             "away_shootout": self.away_shootout,

@@ -78,6 +78,11 @@
             </div>
             <button onclick="sendUpdate({next_period: true})">Next Period (P)</button>
             <hr>
+            <label>
+                <input type="checkbox" id="second_half_absolute" {{ "checked" if game_state.second_half_absolute }} onchange="sendUpdate({ second_half_absolute: this.checked })">
+                2nd Half continues from 30:00
+            </label>
+            <hr>
             <button onclick="sendUpdate({side_change: true})">Side Change (C)</button>
 
         </div>

@@ -80,6 +80,8 @@ def handle_update(data):
             state.set_period_index(idx)
         except ValueError:
             pass
+    if "second_half_absolute" in data:
+        state.second_half_absolute = bool(data["second_half_absolute"])
 
     # Suspensions
     if "add_suspension_home" in data:

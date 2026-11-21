@@ -9,7 +9,16 @@
 </head>
 
 <body class="control-body">
-    <h1>Handball Scoreboard Control</h1>
+    <div class="control-header">
+        <h1>Handball Scoreboard Control</h1>
+        <div class="header-actions">
+            <button class="save-button" onclick="saveState()">Save / Push Names & Scores (S)</button>
+            <button class="save-button reset-button"
+                onclick="if (confirm('Reset the entire game?')) sendUpdate({ reset: true })">
+                Reset Game
+            </button>
+        </div>
+    </div>
 
     <div class="control-container">
 
@@ -202,12 +211,6 @@
             <button onclick="sendUpdate({ shootout_undo_away: true })">Undo</button>
         </div>
     </div>
-
-    <button class="save-button" onclick="saveState()">Save / Push Names & Scores (S)</button>
-    <button class="save-button reset-button"
-        onclick="if (confirm('Reset the entire game?')) sendUpdate({ reset: true })">
-        Reset Game
-    </button>
 
     <script src="{{ url_for('static', filename='control.js') }}"></script>
 </body>

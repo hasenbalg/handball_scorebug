@@ -54,7 +54,6 @@ body {
 .score {
     font-size: 8rem;
     font-weight: 900;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
     text-align: center;
 }
 
@@ -81,7 +80,6 @@ body {
 .time {
     font-size: 6rem;
     font-weight: 900;
-    text-shadow: 0 0 20px #ff0;
     color: #ff0;
     /* bright yellow for visibility */
 }

@@ -41,15 +41,15 @@
        id="linearGradient12"
        inkscape:collect="always">
       <stop
-         style="stop-color:#a7a7a7;stop-opacity:0.03446626;"
+         style="stop-color:#a7a7a7;stop-opacity:1;"
          offset="0.15751816"
          id="stop13" />
       <stop
-         style="stop-color:#b1b1b1;stop-opacity:0.49803922;"
+         style="stop-color:#b1b1b1;stop-opacity:1;"
          offset="0.42203155"
          id="stop15" />
       <stop
-         style="stop-color:#a7a7a7;stop-opacity:0.00390625;"
+         style="stop-color:#a7a7a7;stop-opacity:1;"
          offset="0.84836078"
          id="stop14" />
     </linearGradient>

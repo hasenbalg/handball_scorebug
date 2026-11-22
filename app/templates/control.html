@@ -175,12 +175,14 @@
             <!-- HOME TIMEOUT -->
             <div class="timeout-row">
                 <button id="btn_timeout_home" onclick="sendUpdate({ timeout_home: true })">Home Timeout</button>
+                <button id="btn_undo_timeout_home" onclick="sendUpdate({ undo_timeout_home: true })">Undo</button>
                 <span id="home_timeout_status" class="timeout-status"></span>
             </div>
 
             <!-- AWAY TIMEOUT -->
             <div class="timeout-row">
                 <button id="btn_timeout_away" onclick="sendUpdate({ timeout_away: true })">Away Timeout</button>
+                <button id="btn_undo_timeout_away" onclick="sendUpdate({ undo_timeout_away: true })">Undo</button>
                 <span id="away_timeout_status" class="timeout-status"></span>
             </div>
         </div>

@@ -316,6 +316,18 @@ class ScoreboardState:
         self.away_timeouts_taken.append(self._period_slot())
         self.stop_timer()
 
+    def undo_timeout_home(self):
+        """Undo the last (e.g. mis-clicked) home time-out: drop its dot and
+        cancel an active timer. Does not restart the game clock."""
+        if self.home_timeouts_taken:
+            self.home_timeouts_taken.pop()
+        self.home_timeout_end = None
+
+    def undo_timeout_away(self):
+        if self.away_timeouts_taken:
+            self.away_timeouts_taken.pop()
+        self.away_timeout_end = None
+
     def update_timeouts(self):
         now = time.time()
         if self.home_timeout_end and now >= self.home_timeout_end:

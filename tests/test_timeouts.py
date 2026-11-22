@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
@@ -58,6 +59,31 @@ class TimeoutQuotaTest(unittest.TestCase):
         self.s.start_timeout_home()
         self.s.reset()
         self.assertEqual(self.s.home_timeouts_taken, [])
+
+    def test_undo_pops_last_slot_and_cancels_timer(self):
+        self.s.start_timeout_home()          # half1
+        self.s.next_period()
+        self.s.start_timeout_home()          # half2
+        self.s.undo_timeout_home()
+        self.assertEqual(self.s.home_timeouts_taken, ["half1"])
+        self.assertIsNone(self.s.home_timeout_end)
+        q = self.s.to_public_dict()["home_timeouts"]
+        self.assertEqual((q["total"], q["half1"], q["half2"]), (1, 1, 0))
+
+    def test_undo_without_timeouts_is_noop(self):
+        self.s.undo_timeout_home()
+        self.s.undo_timeout_away()
+        self.assertEqual(self.s.home_timeouts_taken, [])
+        self.assertEqual(self.s.away_timeouts_taken, [])
+        self.assertIsNone(self.s.home_timeout_end)
+        self.assertIsNone(self.s.away_timeout_end)
+
+    def test_undo_after_expiry_only_removes_dot(self):
+        self.s.start_timeout_away()
+        self.s.away_timeout_end = time.time() - 1  # simulate expired timer
+        self.s.update_timeouts()
+        self.s.undo_timeout_away()
+        self.assertEqual(self.s.away_timeouts_taken, [])
 
 
 if __name__ == "__main__":

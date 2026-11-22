@@ -143,12 +143,13 @@ socket.on("state_update", (state) => {
         const q = state[side + "_timeouts"];
         let text = el.textContent.replace(/\s*\| *TO \d\/\d.*$/, "");
         if (q.total) {
-            text += ` | TO ${q.total}/${q.max}`;
+            if (text) text += " |";
+            text += ` TO ${q.total}/${q.max}`;
             if (q.over_total) text += " ⚠ over quota";
             else if (q.over_half) text += " ⚠ 2 per half max";
             if (q.ot_used) text += " ⚠ no TO in OT";
         }
-        el.textContent = text;
+        el.textContent = text.trim();
     }
 });
 

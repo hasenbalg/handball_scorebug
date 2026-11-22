@@ -34,12 +34,32 @@ body {
 
 /* Team blocks: stack name, score, badges, timeout */
 .team-block {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
     min-width: 300px;
 }
+
+/* Team time-out dots (#48): centered below the team box, outside it */
+.to-dots {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+}
+.to-dots .dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+.to-dots .dot.filled { background: #e11; border-color: #e11; }
+.to-dots .dot.over { background: #ff8c00; border-color: #ff8c00; }
 
 /* Team names */
 .team-name {

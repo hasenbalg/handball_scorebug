@@ -1,7 +1,7 @@
 import json
 import time
 import redis
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from suspension import Suspension
 from card import Card
 
@@ -49,6 +49,13 @@ class ScoreboardState:
     away_timeout_end: float | None = None
     TIMEOUT_DURATION: int = 60  # seconds
 
+    # Team time-outs taken, per 2:4 Comment (#48/#1): entries are period
+    # slots ("half1" | "half2" | "ot"); max 3 per match, max 2 per half,
+    # none in overtime. Violations are flagged, never blocked (operator
+    # drives, app marks).
+    home_timeouts_taken: list = field(default_factory=list)
+    away_timeouts_taken: list = field(default_factory=list)
+
     hide_scorebug: bool = False
 
     shootout_active: bool = False
@@ -85,6 +92,8 @@ class ScoreboardState:
         data.setdefault("away_suspensions", [])
         data.setdefault("home_cards", [])
         data.setdefault("away_cards", [])
+        data.setdefault("home_timeouts_taken", [])
+        data.setdefault("away_timeouts_taken", [])
         data.setdefault("home_color", "#005eff")
         data.setdefault("away_color", "#ff3b3b")
 
@@ -275,13 +284,49 @@ class ScoreboardState:
 
     # ----- Timeouts -----
 
+    def _period_slot(self) -> str:
+        """Rule slot of the current period for the TO quota (2:4 Comment)."""
+        name = self.period_name
+        if name == "1st Half":
+            return "half1"
+        if name == "2nd Half":
+            return "half2"
+        return "ot"
+
+    @staticmethod
+    def _timeout_quota(taken: list) -> dict:
+        """Quota view of a team's taken time-outs: max 3 per match, max 2
+        per regular half, none in overtime (2:4 Comment). Flags only."""
+        h1, h2, ot = taken.count("half1"), taken.count("half2"), taken.count("ot")
+        return {
+            "total": len(taken), "max": 3,
+            "half1": h1, "half2": h2, "ot": ot,
+            "over_total": len(taken) > 3,
+            "over_half": h1 > 2 or h2 > 2,
+            "ot_used": ot > 0,
+        }
+
     def start_timeout_home(self):
         self.home_timeout_end = time.time() + self.TIMEOUT_DURATION
+        self.home_timeouts_taken.append(self._period_slot())
         self.stop_timer()
 
     def start_timeout_away(self):
         self.away_timeout_end = time.time() + self.TIMEOUT_DURATION
+        self.away_timeouts_taken.append(self._period_slot())
         self.stop_timer()
+
+    def undo_timeout_home(self):
+        """Undo the last (e.g. mis-clicked) home time-out: drop its dot and
+        cancel an active timer. Does not restart the game clock."""
+        if self.home_timeouts_taken:
+            self.home_timeouts_taken.pop()
+        self.home_timeout_end = None
+
+    def undo_timeout_away(self):
+        if self.away_timeouts_taken:
+            self.away_timeouts_taken.pop()
+        self.away_timeout_end = None
 
     def update_timeouts(self):
         now = time.time()
@@ -305,6 +350,8 @@ class ScoreboardState:
         self.away_cards = []
         self.home_timeout_end = None
         self.away_timeout_end = None
+        self.home_timeouts_taken = []
+        self.away_timeouts_taken = []
         self.buzzer_played = False
 
     # ----- Shootout -----
@@ -369,6 +416,8 @@ class ScoreboardState:
             "away_timeout_active": self.away_timeout_end is not None,
             "home_timeout_remaining": max(0, int(self.home_timeout_end - time.time())) if self.home_timeout_end else 0,
             "away_timeout_remaining": max(0, int(self.away_timeout_end - time.time())) if self.away_timeout_end else 0,
+            "home_timeouts": self._timeout_quota(self.home_timeouts_taken),
+            "away_timeouts": self._timeout_quota(self.away_timeouts_taken),
             "hide_scorebug": self.hide_scorebug,
             "second_half_absolute": self.second_half_absolute,
             "shootout_active": self.shootout_active,

@@ -156,6 +156,10 @@ def handle_update(data):
         state.start_timeout_home()
     if data.get("timeout_away"):
         state.start_timeout_away()
+    if data.get("undo_timeout_home"):
+        state.undo_timeout_home()
+    if data.get("undo_timeout_away"):
+        state.undo_timeout_away()
 
     # Reset
     if data.get("reset"):

@@ -208,3 +208,4 @@ __marimo__/
 redis_data
 caddy_config
 caddy_data
+dump.rdb
